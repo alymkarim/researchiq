@@ -12,3 +12,19 @@ uploads/*
 !uploads/.gitkeep
 
 researchiq.db
+
+backend/.venv/
+backend/__pycache__/
+backend/**/*.pyc
+backend/.env
+backend/researchiq.db
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+.vscode/
+.DS_Store
+Thumbs.db

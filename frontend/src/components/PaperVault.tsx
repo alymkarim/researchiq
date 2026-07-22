@@ -18,10 +18,14 @@ interface PaperVaultProps {
   onDelete: (id: number) => Promise<void>;
 }
 
-function formatDate(value?: string) {
+function formatDate(value?: string | null) {
   if (!value) return "Recently uploaded";
+
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
 
   return new Intl.DateTimeFormat("en", {
     day: "numeric",

@@ -28,6 +28,7 @@ export interface SearchResult {
   filename: string;
   page?: number | null;
   text: string;
+  snippet?: string;
   score: number;
 }
 

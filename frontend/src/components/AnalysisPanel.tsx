@@ -1,10 +1,3 @@
-import {
-  BrainCircuit,
-  CheckCircle2,
-  Lightbulb,
-  Microscope,
-  TriangleAlert,
-} from "lucide-react";
 import type { Analysis, DocumentItem } from "../types";
 
 interface AnalysisPanelProps {
@@ -12,123 +5,127 @@ interface AnalysisPanelProps {
   analysis?: Analysis | null;
 }
 
-function toList(value: unknown): string[] {
-  if (Array.isArray(value)) return value.map(String);
-  if (typeof value === "string") {
-    return value
-      .split(/\n|,|;/)
+interface FieldProps {
+  label: string;
+  value?: string | null;
+  bullets?: boolean;
+}
+
+function AnalysisField({ label, value, bullets = false }: FieldProps) {
+  const content = value?.trim();
+
+  if (!content) {
+    return null;
+  }
+
+  if (bullets) {
+    const items = content
+      .split(/\n+/)
       .map((item) => item.trim())
       .filter(Boolean);
+
+    return (
+      <section className="analysis-field">
+        <h3>{label}</h3>
+        <ul>
+          {items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </section>
+    );
   }
-  return [];
+
+  return (
+    <section className="analysis-field">
+      <h3>{label}</h3>
+      <p>{content}</p>
+    </section>
+  );
 }
 
 export function AnalysisPanel({
   document,
   analysis,
 }: AnalysisPanelProps) {
-  const keywords = toList(analysis?.keywords);
-  const strengths = toList(analysis?.strengths);
-  const limitations = toList(analysis?.limitations);
+  if (!document) {
+    return (
+      <div className="empty-tool-state">
+        <span className="eyebrow">Paper analysis</span>
+        <h2>No paper is open yet</h2>
+        <p>
+          Choose Analyse beside a paper in the library. Its structured
+          findings will appear here.
+        </p>
+      </div>
+    );
+  }
+
+  if (!analysis) {
+    return (
+      <div className="empty-tool-state">
+        <span className="eyebrow">Paper analysis</span>
+        <h2>{document.title || document.filename}</h2>
+        <p>
+          This paper has not been analysed yet. Use the Analyse button in
+          the paper library.
+        </p>
+      </div>
+    );
+  }
+
+  const keywords = analysis.keywords
+    ?.split(",")
+    .map((keyword) => keyword.trim())
+    .filter(Boolean);
 
   return (
-    <section className="lab-panel analysis-panel">
-      <div className="panel-heading">
+    <article className="analysis-view">
+      <header className="analysis-view-header">
         <div>
-          <span className="section-kicker">Analysis chamber</span>
-          <h2>Paper Diagnostics</h2>
+          <span className="eyebrow">Structured paper analysis</span>
+          <h2>{document.title || document.filename}</h2>
         </div>
-        <span className="panel-number">04</span>
+
+        <span className={`analysis-mode ${analysis.analysis_mode || "unknown"}`}>
+          {analysis.analysis_mode === "llm"
+            ? "LLM analysis"
+            : "Local fallback"}
+        </span>
+      </header>
+
+      <AnalysisField label="Executive summary" value={analysis.summary} />
+
+      <div className="analysis-two-column">
+        <AnalysisField label="Objective" value={analysis.objective} />
+        <AnalysisField label="Methodology" value={analysis.methodology} />
+        <AnalysisField label="Dataset or sample" value={analysis.dataset} />
+        <AnalysisField label="Main findings" value={analysis.findings} />
       </div>
 
-      {!document || !analysis ? (
-        <div className="empty-state analysis-empty">
-          <Microscope size={42} />
-          <strong>No specimen under the microscope.</strong>
-          <span>
-            Press Analyse on a paper to produce an unnecessarily official lab
-            report.
-          </span>
-        </div>
-      ) : (
-        <div className="analysis-content">
-          <div className="analysis-title">
-            <span>
-              <BrainCircuit size={18} />
-              ACTIVE SPECIMEN
-            </span>
-            <h3>{document.title || document.filename}</h3>
+      <div className="analysis-two-column">
+        <AnalysisField
+          label="Strengths"
+          value={analysis.strengths}
+          bullets
+        />
+        <AnalysisField
+          label="Limitations"
+          value={analysis.limitations}
+          bullets
+        />
+      </div>
+
+      {keywords && keywords.length > 0 && (
+        <section className="analysis-field">
+          <h3>Keywords</h3>
+          <div className="keyword-list">
+            {keywords.map((keyword) => (
+              <span key={keyword}>{keyword}</span>
+            ))}
           </div>
-
-          <article className="analysis-block summary-block">
-            <span className="analysis-icon">
-              <Lightbulb size={20} />
-            </span>
-            <div>
-              <h4>Executive summary</h4>
-              <p>
-                {analysis.summary ||
-                  analysis.findings ||
-                  "The analysis completed, but the backend did not return a summary field."}
-              </p>
-            </div>
-          </article>
-
-          {analysis.methodology && (
-            <article className="analysis-block">
-              <span className="analysis-icon">
-                <Microscope size={20} />
-              </span>
-              <div>
-                <h4>Methodology</h4>
-                <p>{analysis.methodology}</p>
-              </div>
-            </article>
-          )}
-
-          {keywords.length > 0 && (
-            <div className="keyword-cloud">
-              {keywords.map((keyword) => (
-                <span key={keyword}>{keyword}</span>
-              ))}
-            </div>
-          )}
-
-          <div className="analysis-columns">
-            <article>
-              <h4>
-                <CheckCircle2 size={18} />
-                Strengths
-              </h4>
-              {strengths.length ? (
-                <ul>
-                  {strengths.map((strength) => (
-                    <li key={strength}>{strength}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No structured strengths returned.</p>
-              )}
-            </article>
-
-            <article>
-              <h4>
-                <TriangleAlert size={18} />
-                Limitations
-              </h4>
-              {limitations.length ? (
-                <ul>
-                  {limitations.map((limitation) => (
-                    <li key={limitation}>{limitation}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No structured limitations returned.</p>
-              )}
-            </article>
-          </div>
-        </div>
+        </section>
       )}
-    </section>
+    </article>
   );
 }

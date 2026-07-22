@@ -1,17 +1,15 @@
-from pathlib import Path
+from functools import lru_cache
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     database_url: str = "sqlite:///./researchiq.db"
-
     frontend_origin: str = "http://localhost:5173"
 
-    upload_dir: str = "uploads"
-
     llm_api_key: str | None = None
-    llm_base_url: str | None = None
-    llm_model: str | None = None
+    llm_base_url: str = "https://api.openai.com/v1"
+    llm_model: str = "gpt-4.1-mini"
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -20,6 +18,9 @@ class Settings(BaseSettings):
     )
 
 
-settings = Settings()
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
 
-Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
+
+settings = get_settings()

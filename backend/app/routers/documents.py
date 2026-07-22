@@ -1,12 +1,23 @@
+import json
+import re
 from pathlib import Path
 from uuid import uuid4
 
 import fitz
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
-from sqlalchemy.orm import Session
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    UploadFile,
+    status,
+)
+from sqlalchemy import select
+from sqlalchemy.orm import Session, selectinload
 
-from app import models, schemas
-from app.database import get_db
+from ..database import get_db
+from ..models import Document
+from ..schemas import DocumentOut
 
 
 router = APIRouter(
@@ -17,130 +28,275 @@ router = APIRouter(
 UPLOAD_DIRECTORY = Path("uploads")
 UPLOAD_DIRECTORY.mkdir(parents=True, exist_ok=True)
 
+MAX_FILE_SIZE = 15 * 1024 * 1024  # 15 MB
 
-def clean_text(value: str | None) -> str | None:
-    """
-    Remove characters that PostgreSQL cannot store, including NUL bytes.
-    """
-    if value is None:
+
+def clean_extracted_text(value: str | None) -> str:
+    """Clean text produced by PDF extraction."""
+    if not value:
+        return ""
+
+    value = value.replace("\x00", " ")
+    value = value.replace("\u00ad", "")
+
+    # Join words broken across lines, such as:
+    # "machine-\nlearning" -> "machinelearning"
+    value = re.sub(r"(\w)-\s+(\w)", r"\1\2", value)
+
+    # Normalise whitespace.
+    value = re.sub(r"\s+", " ", value)
+
+    return value.strip()
+
+
+def clean_metadata_text(value: str | None) -> str | None:
+    cleaned = clean_extracted_text(value)
+
+    if not cleaned:
         return None
 
-    return value.replace("\x00", "").strip()
+    return cleaned
 
 
-def extract_pdf_content(file_path: Path) -> dict[str, str | None]:
-    """
-    Extract text and basic metadata from a PDF using PyMuPDF.
-    """
+def extract_pdf_pages(file_path: Path) -> list[dict[str, object]]:
+    """Extract selectable text from each PDF page."""
+    pages: list[dict[str, object]] = []
+
+    with fitz.open(file_path) as pdf:
+        for page_index, page in enumerate(pdf):
+            page_text = clean_extracted_text(page.get_text("text"))
+
+            if not page_text:
+                continue
+
+            pages.append(
+                {
+                    "page": page_index + 1,
+                    "text": page_text,
+                }
+            )
+
+    return pages
+
+
+def extract_title(pdf: fitz.Document, fallback: str) -> str:
+    """Extract a useful title from metadata or the first page."""
+    metadata_title = clean_metadata_text(pdf.metadata.get("title"))
+
+    if metadata_title and len(metadata_title) > 3:
+        return metadata_title[:500]
+
+    if len(pdf) > 0:
+        first_page = pdf[0]
+        blocks = first_page.get_text("blocks")
+
+        candidates: list[tuple[float, str]] = []
+
+        for block in blocks:
+            if len(block) < 5:
+                continue
+
+            text = clean_extracted_text(str(block[4]))
+
+            if not text:
+                continue
+
+            if len(text) < 5 or len(text) > 500:
+                continue
+
+            # Prefer text positioned near the top of the first page.
+            y_position = float(block[1])
+            candidates.append((y_position, text))
+
+        if candidates:
+            candidates.sort(key=lambda item: item[0])
+
+            for _, candidate in candidates[:8]:
+                lowered = candidate.lower()
+
+                if any(
+                    unwanted in lowered
+                    for unwanted in (
+                        "abstract",
+                        "introduction",
+                        "copyright",
+                        "doi:",
+                        "http://",
+                        "https://",
+                    )
+                ):
+                    continue
+
+                return candidate[:500]
+
+    return Path(fallback).stem[:500]
+
+
+def extract_authors(pdf: fitz.Document) -> str | None:
+    """Extract authors primarily from PDF metadata."""
+    metadata_authors = clean_metadata_text(pdf.metadata.get("author"))
+
+    if metadata_authors:
+        return metadata_authors[:500]
+
+    return None
+
+
+def extract_abstract(full_text: str) -> str | None:
+    """Try to extract the abstract section from the paper text."""
+    patterns = [
+        r"\babstract\b[:\s]*(.*?)(?=\bkeywords?\b|\bintroduction\b|\b1[\.\s]+introduction\b)",
+        r"\bsummary\b[:\s]*(.*?)(?=\bkeywords?\b|\bintroduction\b)",
+    ]
+
+    for pattern in patterns:
+        match = re.search(
+            pattern,
+            full_text,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+
+        if not match:
+            continue
+
+        abstract = clean_extracted_text(match.group(1))
+
+        if 40 <= len(abstract):
+            return abstract[:3000]
+
+    return None
+
+
+def validate_pdf_upload(file: UploadFile) -> None:
+    filename = file.filename or ""
+
+    is_pdf_name = filename.lower().endswith(".pdf")
+    is_pdf_type = file.content_type in {
+        "application/pdf",
+        "application/x-pdf",
+        "application/octet-stream",
+    }
+
+    if not is_pdf_name or not is_pdf_type:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only PDF files are supported.",
+        )
+
+
+async def save_uploaded_pdf(
+    file: UploadFile,
+) -> tuple[Path, str, bytes]:
+    validate_pdf_upload(file)
+
+    file_bytes = await file.read()
+
+    if not file_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The uploaded PDF is empty.",
+        )
+
+    if len(file_bytes) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Each PDF must be smaller than 15 MB.",
+        )
+
+    original_filename = Path(file.filename or "paper.pdf").name
+    stored_filename = f"{uuid4().hex}.pdf"
+    saved_path = UPLOAD_DIRECTORY / stored_filename
+
+    saved_path.write_bytes(file_bytes)
+
+    return saved_path, original_filename, file_bytes
+
+
+def build_document_from_pdf(
+    file_path: Path,
+    original_filename: str,
+) -> Document:
     try:
+        pages = extract_pdf_pages(file_path)
+
+        if not pages:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=(
+                    f"No selectable text was found in {original_filename}. "
+                    "The PDF may be scanned and require OCR."
+                ),
+            )
+
+        full_text = "\n\n".join(
+            str(page["text"])
+            for page in pages
+        )
+
         with fitz.open(file_path) as pdf:
-            metadata = pdf.metadata or {}
+            title = extract_title(pdf, original_filename)
+            authors = extract_authors(pdf)
 
-            page_text = [
-                page.get_text("text")
-                for page in pdf
-            ]
+        abstract = extract_abstract(full_text)
 
-            full_text = clean_text("\n".join(page_text)) or ""
+        return Document(
+            filename=original_filename,
+            title=title,
+            authors=authors,
+            abstract=abstract,
+            full_text=full_text,
+            pages_json=json.dumps(
+                pages,
+                ensure_ascii=False,
+            ),
+            file_path=str(file_path),
+        )
 
-            title = clean_text(metadata.get("title"))
-            authors = clean_text(metadata.get("author"))
-            subject = clean_text(metadata.get("subject"))
-
-            # Use the first useful line when the PDF has no title metadata.
-            if not title and full_text:
-                meaningful_lines = [
-                    line.strip()
-                    for line in full_text.splitlines()
-                    if line.strip()
-                ]
-
-                if meaningful_lines:
-                    title = clean_text(meaningful_lines[0][:500])
-
-            return {
-                "title": title,
-                "authors": authors,
-                "abstract": subject,
-                "content": full_text,
-            }
+    except HTTPException:
+        raise
 
     except Exception as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Could not process PDF: {exc}",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"{original_filename} could not be read as a valid PDF."
+            ),
         ) from exc
-
-
-def build_document_values(
-    filename: str,
-    stored_path: Path,
-    extracted: dict[str, str | None],
-) -> dict:
-    """
-    Build values using only columns that exist in the Document model.
-
-    This supports common text field names such as:
-    content, text, full_text and extracted_text.
-    """
-    document_columns = {
-        column.name
-        for column in models.Document.__table__.columns
-    }
-
-    values: dict = {}
-
-    possible_values = {
-        "filename": clean_text(filename),
-        "file_path": str(stored_path),
-        "filepath": str(stored_path),
-        "path": str(stored_path),
-        "title": extracted.get("title"),
-        "authors": extracted.get("authors"),
-        "author": extracted.get("authors"),
-        "abstract": extracted.get("abstract"),
-        "content": extracted.get("content"),
-        "text": extracted.get("content"),
-        "full_text": extracted.get("content"),
-        "extracted_text": extracted.get("content"),
-    }
-
-    for field_name, value in possible_values.items():
-        if field_name in document_columns:
-            values[field_name] = clean_text(value)
-
-    return values
 
 
 @router.get(
     "",
-    response_model=list[schemas.DocumentOut],
+    response_model=list[DocumentOut],
 )
 def get_documents(
     db: Session = Depends(get_db),
-):
-    return (
-        db.query(models.Document)
-        .order_by(models.Document.id.desc())
-        .all()
+) -> list[Document]:
+    statement = (
+        select(Document)
+        .options(selectinload(Document.analysis))
+        .order_by(Document.created_at.desc())
     )
+
+    return list(db.scalars(statement).all())
 
 
 @router.get(
     "/{document_id}",
-    response_model=schemas.DocumentOut,
+    response_model=DocumentOut,
 )
 def get_document(
     document_id: int,
     db: Session = Depends(get_db),
-):
-    document = (
-        db.query(models.Document)
-        .filter(models.Document.id == document_id)
-        .first()
+) -> Document:
+    statement = (
+        select(Document)
+        .options(selectinload(Document.analysis))
+        .where(Document.id == document_id)
     )
 
-    if document is None:
+    document = db.scalar(statement)
+
+    if not document:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Document not found.",
@@ -151,64 +307,31 @@ def get_document(
 
 @router.post(
     "/upload",
-    response_model=list[schemas.DocumentOut],
+    response_model=list[DocumentOut],
     status_code=status.HTTP_201_CREATED,
 )
 async def upload_documents(
     files: list[UploadFile] = File(...),
     db: Session = Depends(get_db),
-):
+) -> list[Document]:
     if not files:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="At least one PDF file is required.",
+            detail="Please select at least one PDF.",
         )
 
-    created_documents: list[models.Document] = []
     saved_paths: list[Path] = []
+    created_documents: list[Document] = []
 
     try:
-        for uploaded_file in files:
-            original_filename = clean_text(uploaded_file.filename)
+        for file in files:
+            saved_path, original_filename, _ = await save_uploaded_pdf(file)
+            saved_paths.append(saved_path)
 
-            if not original_filename:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Uploaded file has no filename.",
-                )
-
-            is_pdf_name = original_filename.lower().endswith(".pdf")
-            is_pdf_type = uploaded_file.content_type == "application/pdf"
-
-            if not is_pdf_name and not is_pdf_type:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"{original_filename} is not a PDF file.",
-                )
-
-            unique_filename = f"{uuid4().hex}_{Path(original_filename).name}"
-            stored_path = UPLOAD_DIRECTORY / unique_filename
-
-            file_bytes = await uploaded_file.read()
-
-            if not file_bytes:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"{original_filename} is empty.",
-                )
-
-            stored_path.write_bytes(file_bytes)
-            saved_paths.append(stored_path)
-
-            extracted = extract_pdf_content(stored_path)
-
-            document_values = build_document_values(
-                filename=original_filename,
-                stored_path=stored_path,
-                extracted=extracted,
+            document = build_document_from_pdf(
+                file_path=saved_path,
+                original_filename=original_filename,
             )
-
-            document = models.Document(**document_values)
 
             db.add(document)
             created_documents.append(document)
@@ -223,25 +346,25 @@ async def upload_documents(
     except HTTPException:
         db.rollback()
 
-        for saved_path in saved_paths:
-            saved_path.unlink(missing_ok=True)
+        for path in saved_paths:
+            path.unlink(missing_ok=True)
 
         raise
 
     except Exception as exc:
         db.rollback()
 
-        for saved_path in saved_paths:
-            saved_path.unlink(missing_ok=True)
+        for path in saved_paths:
+            path.unlink(missing_ok=True)
 
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to upload document: {exc}",
+            detail="The documents could not be saved.",
         ) from exc
 
     finally:
-        for uploaded_file in files:
-            await uploaded_file.close()
+        for file in files:
+            await file.close()
 
 
 @router.delete(
@@ -251,43 +374,26 @@ async def upload_documents(
 def delete_document(
     document_id: int,
     db: Session = Depends(get_db),
-):
-    document = (
-        db.query(models.Document)
-        .filter(models.Document.id == document_id)
-        .first()
-    )
+) -> None:
+    document = db.get(Document, document_id)
 
-    if document is None:
+    if not document:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Document not found.",
         )
 
-    possible_path_fields = ["file_path", "filepath", "path"]
-
-    stored_path: Path | None = None
-
-    for field_name in possible_path_fields:
-        path_value = getattr(document, field_name, None)
-
-        if path_value:
-            stored_path = Path(path_value)
-            break
+    file_path = Path(document.file_path)
 
     try:
         db.delete(document)
         db.commit()
-
-        if stored_path:
-            stored_path.unlink(missing_ok=True)
-
     except Exception as exc:
         db.rollback()
 
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete document: {exc}",
+            detail="The document could not be deleted.",
         ) from exc
 
-    return None
+    file_path.unlink(missing_ok=True)

@@ -1,7 +1,10 @@
 from datetime import datetime
+
 from sqlalchemy import DateTime, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from .database import Base
+
 
 class Document(Base):
     __tablename__ = "documents"
@@ -12,8 +15,15 @@ class Document(Base):
     authors: Mapped[str | None] = mapped_column(String(500), nullable=True)
     abstract: Mapped[str | None] = mapped_column(Text, nullable=True)
     full_text: Mapped[str] = mapped_column(Text)
+
+    # JSON string containing page numbers and page text.
+    pages_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     file_path: Mapped[str] = mapped_column(String(1000))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
 
     analysis: Mapped["Analysis | None"] = relationship(
         back_populates="document",
@@ -21,10 +31,12 @@ class Document(Base):
         uselist=False,
     )
 
+
 class Analysis(Base):
     __tablename__ = "analyses"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+
     document_id: Mapped[int] = mapped_column(
         ForeignKey("documents.id", ondelete="CASCADE"),
         unique=True,

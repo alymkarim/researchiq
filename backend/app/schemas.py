@@ -27,12 +27,14 @@ class DocumentOut(BaseModel):
 
 class SearchRequest(BaseModel):
     query: str = Field(min_length=2)
+    document_ids: list[int] = Field(default_factory=list)
     limit: int = Field(default=5, ge=1, le=20)
 
 class SearchResult(BaseModel):
     document_id: int
     document_title: str
     filename: str
+    page: int | None = None
     text: str
     score: float
 
@@ -52,3 +54,4 @@ class ComparisonOut(BaseModel):
     papers: list[ComparisonPaper]
     common_keywords: list[str]
     summary: str
+

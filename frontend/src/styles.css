@@ -1508,6 +1508,7 @@ footer {
   font-family: monospace;
   font-weight: 700;
   text-transform: uppercase;
+   margin: 1rem 0;
 }
 
 .system-status.online {

@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
-import { CircleAlert, LoaderCircle, Radio } from "lucide-react";
-import type { HealthStatus } from "../types";
+import {
+  CircleAlert,
+  LoaderCircle,
+  Radio,
+} from "lucide-react";
 
-const API_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8000";
+import { API_URL } from "../api";
+import type { HealthStatus } from "../types";
 
 export function SystemStatus() {
   const [health, setHealth] = useState<HealthStatus | null>(null);
@@ -38,8 +41,13 @@ export function SystemStatus() {
 
     void checkHealth();
 
+    const intervalId = window.setInterval(() => {
+      void checkHealth();
+    }, 60_000);
+
     return () => {
       active = false;
+      window.clearInterval(intervalId);
     };
   }, []);
 

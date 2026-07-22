@@ -13,6 +13,7 @@ import { Header } from "./components/Header";
 import { Hero } from "./components/Hero";
 import { PaperVault } from "./components/PaperVault";
 import { ResearchConsole } from "./components/ResearchConsole";
+import { SystemStatus } from "./components/SystemStatus";
 import { Toast } from "./components/Toast";
 import { UploadPanel } from "./components/UploadPanel";
 import type {
@@ -21,8 +22,6 @@ import type {
   DocumentItem,
   SearchResult,
 } from "./types";
-<SystemStatus />
-
 interface ToastState {
   message: string;
   type: "success" | "error";
@@ -199,6 +198,8 @@ export default function App() {
       <Header online={online} />
 
       <main>
+        <SystemStatus />
+
         <Hero
           documentCount={documents.length}
           onUploadClick={scrollToUpload}

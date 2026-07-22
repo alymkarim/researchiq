@@ -3,12 +3,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class AnalysisOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+
     id: int
     document_id: int
     objective: str
     methodology: str
     dataset: str
     findings: str
+    strengths: str | None = None
     limitations: str
     keywords: str
     created_at: datetime

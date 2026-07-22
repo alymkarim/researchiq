@@ -16,14 +16,17 @@ async def create_analysis(document_id: int, db: Session = Depends(get_db)):
     result = await analyse_document(document.full_text, document.title or document.filename)
 
     analysis = document.analysis or Analysis(document_id=document.id)
+    
     db.add(analysis)
 
     analysis.objective = result["objective"]
     analysis.methodology = result["methodology"]
     analysis.dataset = result["dataset"]
     analysis.findings = result["findings"]
+    analysis.strengths = result.get("strengths")
     analysis.limitations = result["limitations"]
     analysis.keywords = result["keywords"]
+    
 
     db.commit()
     db.refresh(analysis)

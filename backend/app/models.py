@@ -25,13 +25,22 @@ class Analysis(Base):
     __tablename__ = "analyses"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    document_id: Mapped[int] = mapped_column(ForeignKey("documents.id", ondelete="CASCADE"), unique=True)
+    document_id: Mapped[int] = mapped_column(
+        ForeignKey("documents.id", ondelete="CASCADE"),
+        unique=True,
+    )
+
     objective: Mapped[str] = mapped_column(Text, default="")
     methodology: Mapped[str] = mapped_column(Text, default="")
     dataset: Mapped[str] = mapped_column(Text, default="")
     findings: Mapped[str] = mapped_column(Text, default="")
+    strengths: Mapped[str] = mapped_column(Text, default="")
     limitations: Mapped[str] = mapped_column(Text, default="")
     keywords: Mapped[str] = mapped_column(Text, default="")
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
 
     document: Mapped[Document] = relationship(back_populates="analysis")

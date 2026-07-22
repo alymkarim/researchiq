@@ -35,7 +35,7 @@ export function Header({ online }: HeaderProps) {
         </span>
         <a
           className="icon-button"
-          href="https://github.com/"
+          href="https://github.com/alymkarim/researchiq"
           target="_blank"
           rel="noreferrer"
           aria-label="Open GitHub"

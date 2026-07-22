@@ -38,3 +38,9 @@ export interface ComparisonResult {
   limitations?: string;
   [key: string]: unknown;
 }
+
+export interface HealthStatus {
+  status: "healthy" | "degraded";
+  api: string;
+  database: string;
+}

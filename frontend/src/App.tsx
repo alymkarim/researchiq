@@ -21,6 +21,7 @@ import type {
   DocumentItem,
   SearchResult,
 } from "./types";
+<SystemStatus />
 
 interface ToastState {
   message: string;

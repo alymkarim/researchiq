@@ -1497,3 +1497,27 @@ footer {
     line-height: 1.5;
   }
 }
+
+.system-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.8rem;
+  border: 2px solid #1d1d1d;
+  border-radius: 999px;
+  font-family: monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.system-status.online {
+  background: #dff8d8;
+}
+
+.system-status.offline {
+  background: #ffd9d2;
+}
+
+.system-status.checking {
+  background: #fff3bf;
+}

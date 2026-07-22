@@ -1,4 +1,10 @@
-import { FlaskConical, Radio } from "lucide-react";
+import {
+  Atom,
+  FlaskConical,
+  Github,
+  RadioTower,
+} from "lucide-react";
+
 import type { WorkspaceTab } from "../App";
 
 interface HeaderProps {
@@ -14,12 +20,19 @@ export function Header({
   onNavigate,
   onPaperVaultClick,
 }: HeaderProps) {
+  function goToTop() {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
+
   return (
     <header className="site-header">
       <button
         type="button"
         className="brand brand-button"
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        onClick={goToTop}
         aria-label="Back to the top"
       >
         <span className="brand-mark">
@@ -32,11 +45,13 @@ export function Header({
         </span>
       </button>
 
-      <nav className="header-nav" aria-label="Primary navigation">
+      <nav
+        className="header-nav"
+        aria-label="Primary navigation"
+      >
         <button
           type="button"
           onClick={onPaperVaultClick}
-
         >
           Paper Vault
         </button>
@@ -51,7 +66,9 @@ export function Header({
 
         <button
           type="button"
-          className={activeTab === "comparison" ? "active" : ""}
+          className={
+            activeTab === "comparison" ? "active" : ""
+          }
           onClick={() => onNavigate("comparison")}
         >
           Comparison Reactor
@@ -59,11 +76,31 @@ export function Header({
       </nav>
 
       <div className="header-actions">
-        <span className={`status-chip ${online ? "online" : "offline"}`}>
-          <Radio size={14} />
+        <span
+          className={`status-chip ${
+            online ? "online" : "offline"
+          }`}
+        >
+          <RadioTower size={14} />
+
           {online ? "System online" : "System offline"}
         </span>
+
+        <a
+          className="icon-button"
+          href="https://github.com/alymkarim/researchiq"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Open ResearchIQ on GitHub"
+        >
+          <Github size={19} />
+        </a>
       </div>
+
+      <Atom
+        className="header-atom"
+        aria-hidden="true"
+      />
     </header>
   );
 }

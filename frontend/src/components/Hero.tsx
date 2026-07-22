@@ -1,47 +1,54 @@
 import {
   ArrowDown,
   Atom,
-  BookOpenCheck,
   BrainCircuit,
-  FlaskConical,
-  Sparkles,
   Upload,
 } from "lucide-react";
 
 interface HeroProps {
   documentCount: number;
   onUploadClick: () => void;
+  onConsoleClick: () => void;
 }
 
-export function Hero({ documentCount, onUploadClick }: HeroProps) {
+export function Hero({
+  documentCount,
+  onUploadClick,
+  onConsoleClick,
+}: HeroProps) {
   return (
-    <section className="hero" id="top">
+    <section className="hero">
       <div className="hero-copy">
-        <span className="eyebrow">
-          <Sparkles size={15} />
-          Classified research facility
-        </span>
+        <span className="eyebrow">Classified research facility</span>
 
         <h1>
           Turn dense papers into
-          <span> suspiciously useful insights.</span>
+          <span>suspiciously useful insights.</span>
         </h1>
 
         <p>
-          Upload research papers, interrogate the evidence, compare methods and
-          extract the useful bits without personally fighting all 87 pages.
+          Upload research papers, interrogate the evidence, compare methods
+          and extract the useful bits without personally fighting all 87 pages.
         </p>
 
         <div className="hero-actions">
-          <button className="primary-button" onClick={onUploadClick}>
-            <Upload size={19} />
+          <button
+            type="button"
+            className="primary-button"
+            onClick={onUploadClick}
+          >
+            <Upload size={18} />
             Add a specimen
           </button>
 
-          <a className="secondary-button" href="#console">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={onConsoleClick}
+          >
             Enter research console
             <ArrowDown size={18} />
-          </a>
+          </button>
         </div>
 
         <div className="hero-stats">
@@ -49,10 +56,12 @@ export function Hero({ documentCount, onUploadClick }: HeroProps) {
             <strong>{documentCount}</strong>
             <span>Papers secured</span>
           </article>
+
           <article>
             <strong>4</strong>
             <span>Lab machines</span>
           </article>
+
           <article>
             <strong>0</strong>
             <span>Brain cells harmed</span>
@@ -60,10 +69,11 @@ export function Hero({ documentCount, onUploadClick }: HeroProps) {
         </div>
       </div>
 
-      <div className="hero-machine" aria-label="ResearchIQ status console">
+      <div className="hero-machine" aria-hidden="true">
         <div className="machine-top">
           <span className="machine-label">RIQ-9000</span>
-          <div className="signal-lights" aria-hidden="true">
+
+          <div className="signal-lights">
             <span />
             <span />
             <span />
@@ -72,7 +82,7 @@ export function Hero({ documentCount, onUploadClick }: HeroProps) {
 
         <div className="machine-screen">
           <div className="screen-grid" />
-          <Atom className="screen-atom" size={76} />
+          <Atom className="screen-atom" size={88} strokeWidth={1.8} />
           <strong>SYSTEM READY</strong>
           <small>Feed me PDFs. I have questions.</small>
         </div>
@@ -89,24 +99,19 @@ export function Hero({ documentCount, onUploadClick }: HeroProps) {
             </div>
           </div>
 
-          <button
-            className="machine-button"
-            onClick={onUploadClick}
-            aria-label="Upload papers"
-          >
-            <FlaskConical size={24} />
-          </button>
+          <div className="machine-button">
+            <BrainCircuit size={24} />
+          </div>
         </div>
 
-        <div className="floating-badge badge-one">
-          <BrainCircuit size={18} />
+        <span className="floating-badge badge-one">
+          <BrainCircuit size={16} />
           AI assisted
-        </div>
+        </span>
 
-        <div className="floating-badge badge-two">
-          <BookOpenCheck size={18} />
+        <span className="floating-badge badge-two">
           Evidence first
-        </div>
+        </span>
       </div>
     </section>
   );

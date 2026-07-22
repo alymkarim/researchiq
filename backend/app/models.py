@@ -11,15 +11,28 @@ class Document(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     filename: Mapped[str] = mapped_column(String(255))
-    title: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    authors: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    abstract: Mapped[str | None] = mapped_column(Text, nullable=True)
+    title: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+    )
+    authors: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+    )
+    abstract: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
     full_text: Mapped[str] = mapped_column(Text)
 
     # JSON string containing page numbers and page text.
-    pages_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    pages_json: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
 
     file_path: Mapped[str] = mapped_column(String(1000))
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -38,21 +51,57 @@ class Analysis(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
 
     document_id: Mapped[int] = mapped_column(
-        ForeignKey("documents.id", ondelete="CASCADE"),
+        ForeignKey(
+            "documents.id",
+            ondelete="CASCADE",
+        ),
         unique=True,
     )
 
-    objective: Mapped[str] = mapped_column(Text, default="")
-    methodology: Mapped[str] = mapped_column(Text, default="")
-    dataset: Mapped[str] = mapped_column(Text, default="")
-    findings: Mapped[str] = mapped_column(Text, default="")
-    strengths: Mapped[str] = mapped_column(Text, default="")
-    limitations: Mapped[str] = mapped_column(Text, default="")
-    keywords: Mapped[str] = mapped_column(Text, default="")
+    summary: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    objective: Mapped[str] = mapped_column(
+        Text,
+        default="",
+    )
+    methodology: Mapped[str] = mapped_column(
+        Text,
+        default="",
+    )
+    dataset: Mapped[str] = mapped_column(
+        Text,
+        default="",
+    )
+    findings: Mapped[str] = mapped_column(
+        Text,
+        default="",
+    )
+    strengths: Mapped[str] = mapped_column(
+        Text,
+        default="",
+    )
+    limitations: Mapped[str] = mapped_column(
+        Text,
+        default="",
+    )
+    keywords: Mapped[str] = mapped_column(
+        Text,
+        default="",
+    )
+
+    analysis_mode: Mapped[str | None] = mapped_column(
+        String(30),
+        nullable=True,
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
     )
 
-    document: Mapped[Document] = relationship(back_populates="analysis")
+    document: Mapped[Document] = relationship(
+        back_populates="analysis",
+    )

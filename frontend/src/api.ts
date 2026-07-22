@@ -100,8 +100,7 @@ async function apiFetch<T>(
   } catch {
     throw new ApiError(
       "The ResearchIQ backend could not be reached. "
-        + "The Render service may be waking up. "
-        + "Wait about 30 seconds and try again.",
+        + "If the application has been idle, the Render backend may take 30–60 seconds to start.",
     );
   }
 

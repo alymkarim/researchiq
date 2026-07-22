@@ -18,6 +18,202 @@ FIELDS = [
 ]
 
 
+def clean_pdf_text(value: str) -> str:
+    """Clean common PDF extraction problems without removing meaningful numbers."""
+    if not value:
+        return ""
+
+    value = value.replace("\x00", " ")
+    value = value.replace("\u00ad", "")
+    value = value.replace("•", " ")
+    value = value.replace("▪", " ")
+    value = value.replace("■", " ")
+
+    # Join words split across line breaks, such as "nano-\nmaterials".
+    value = re.sub(r"(\w)-\s+(\w)", r"\1\2", value)
+
+    # Remove bracketed academic citations, including malformed PDF versions:
+    # [1], [1, 2], [1 2], [24-26], [1\n2].
+    value = re.sub(
+        r"\[\s*\d+(?:\s*[,;–—-]?\s*\d+)*\s*\]",
+        " ",
+        value,
+    )
+
+    # Remove parenthesised numeric citations such as (12) or (12, 13).
+    value = re.sub(
+        r"\(\s*\d+(?:\s*[,;–—-]\s*\d+)*\s*\)",
+        " ",
+        value,
+    )
+
+    # Repair punctuation and spacing.
+    value = re.sub(r"\s+([,.;:!?])", r"\1", value)
+    value = re.sub(r"([,.;:!?])(?=[A-Za-z])", r"\1 ", value)
+    value = re.sub(r"\s+", " ", value)
+
+    return value.strip()
+
+
+def clean_output(value: str, maximum_length: int = 900) -> str:
+    value = clean_pdf_text(value)
+
+    if not value:
+        return "Not clearly stated"
+
+    value = value.strip(" ,;:-")
+    return value[:maximum_length].strip()
+
+
+def make_sentences(text: str) -> list[str]:
+    cleaned = clean_pdf_text(text)
+
+    sentences = re.split(
+        r"(?<=[.!?])\s+|(?<=;)\s+(?=[A-Z])",
+        cleaned,
+    )
+
+    ignored_phrases = (
+        "all rights reserved",
+        "copyright",
+        "isbn",
+        "table of contents",
+        "downloaded from",
+        "available online",
+        "published by",
+        "http://",
+        "https://",
+    )
+
+    valid_sentences: list[str] = []
+
+    for sentence in sentences:
+        sentence = sentence.strip()
+
+        if not 35 <= len(sentence) <= 1800:
+            continue
+
+        lowered = sentence.lower()
+
+        if any(phrase in lowered for phrase in ignored_phrases):
+            continue
+
+        valid_sentences.append(sentence)
+
+    return valid_sentences
+
+
+def find_matching_sentences(
+    sentences: list[str],
+    phrases: list[str],
+    limit: int = 2,
+) -> list[str]:
+    matches: list[str] = []
+
+    for sentence in sentences:
+        lowered = sentence.lower()
+
+        if any(phrase in lowered for phrase in phrases):
+            cleaned = clean_output(sentence, maximum_length=450)
+
+            if cleaned not in matches:
+                matches.append(cleaned)
+
+        if len(matches) >= limit:
+            break
+
+    return matches
+
+
+def split_candidate_points(value: str, limit: int = 4) -> list[str]:
+    """
+    Convert a long extracted sentence into a few concise points.
+
+    This is especially useful for sentences such as:
+    'The material has several properties including high strength,
+    good conductivity, large surface area and biocompatibility.'
+    """
+    value = clean_pdf_text(value)
+
+    if not value:
+        return []
+
+    candidate = value
+
+    # Prefer the content after phrases introducing a list.
+    list_markers = [
+        "including:",
+        "including",
+        "such as:",
+        "such as",
+        "advantages include:",
+        "advantages include",
+        "properties include:",
+        "properties including:",
+        "characteristics include:",
+    ]
+
+    lowered = candidate.lower()
+
+    for marker in list_markers:
+        marker_position = lowered.find(marker)
+
+        if marker_position != -1:
+            candidate = candidate[marker_position + len(marker):]
+            break
+
+    parts = re.split(
+        r"\s*[,;]\s*|\s+\band\b\s+",
+        candidate,
+        flags=re.IGNORECASE,
+    )
+
+    points: list[str] = []
+
+    for part in parts:
+        part = clean_output(part, maximum_length=220)
+        part = part.strip(" .,:;-")
+
+        if len(part) < 12:
+            continue
+
+        if part.lower() in {"not clearly stated", "introduction"}:
+            continue
+
+        # Avoid returning another enormous paragraph as one bullet.
+        if len(part) > 220:
+            part = part[:217].rstrip() + "..."
+
+        if part not in points:
+            points.append(part[0].upper() + part[1:])
+
+        if len(points) >= limit:
+            break
+
+    return points
+
+
+def format_points(points: list[str], fallback: str) -> str:
+    cleaned_points: list[str] = []
+
+    for point in points:
+        point = clean_output(point, maximum_length=260)
+        point = point.strip(" .,:;-")
+
+        if not point or point == "Not clearly stated":
+            continue
+
+        if point not in cleaned_points:
+            cleaned_points.append(point)
+
+    if not cleaned_points:
+        return fallback
+
+    # Keep the database field as a string while allowing the frontend
+    # to display each line as a separate bullet.
+    return "\n".join(cleaned_points[:4])
+
+
 async def analyse_document(text: str, title: str) -> dict[str, str]:
     if (
         settings.llm_api_key
@@ -25,8 +221,10 @@ async def analyse_document(text: str, title: str) -> dict[str, str]:
         and settings.llm_model
     ):
         try:
-            return await analyse_with_llm(text, title)
+            result = await analyse_with_llm(text, title)
+            return normalise_analysis(result)
         except Exception:
+            # Fall back to local extraction when the LLM is unavailable.
             pass
 
     return heuristic_analysis(text)
@@ -34,14 +232,19 @@ async def analyse_document(text: str, title: str) -> dict[str, str]:
 
 async def analyse_with_llm(text: str, title: str) -> dict[str, str]:
     prompt = (
-        "Analyse this scientific paper and return valid JSON only with these keys: "
-        "objective, methodology, dataset, findings, strengths, limitations, keywords. "
-        "Each value must be a string. Keywords must be comma-separated. "
-        "Strengths and limitations must be evidence-based and specific to the paper. "
-        "Do not invent missing facts. If something is not clearly stated, return "
-        "'Not clearly stated'.\n\n"
+        "Analyse the scientific document below and return valid JSON only. "
+        "Use exactly these keys: objective, methodology, dataset, findings, "
+        "strengths, limitations, keywords. "
+        "Every value must be a string. "
+        "For strengths and limitations, provide up to four concise statements "
+        "separated by newline characters. Do not copy large paragraphs. "
+        "Do not treat references, author names, dates, section headings or "
+        "generic mentions of future prospects as evidence. "
+        "Keywords must be comma-separated. "
+        "Do not invent facts. Use 'Not clearly stated' when the document does "
+        "not provide enough evidence.\n\n"
         f"Title: {title}\n\n"
-        f"Paper:\n{text[:24000]}"
+        f"Document:\n{clean_pdf_text(text)[:24000]}"
     )
 
     payload = {
@@ -51,8 +254,8 @@ async def analyse_with_llm(text: str, title: str) -> dict[str, str]:
             {
                 "role": "system",
                 "content": (
-                    "You extract accurate, structured evidence from scientific papers. "
-                    "Return JSON only."
+                    "You extract concise, evidence-based information from "
+                    "scientific documents and return JSON only."
                 ),
             },
             {
@@ -73,7 +276,7 @@ async def analyse_with_llm(text: str, title: str) -> dict[str, str]:
         response.raise_for_status()
 
     content = response.json()["choices"][0]["message"]["content"].strip()
-    content = re.sub(r"^```json\s*", "", content)
+    content = re.sub(r"^```json\s*", "", content, flags=re.IGNORECASE)
     content = re.sub(r"\s*```$", "", content)
 
     data = json.loads(content)
@@ -84,216 +287,253 @@ async def analyse_with_llm(text: str, title: str) -> dict[str, str]:
     }
 
 
+def normalise_analysis(data: dict[str, str]) -> dict[str, str]:
+    result: dict[str, str] = {}
+
+    for field in FIELDS:
+        value = str(data.get(field, "Not clearly stated"))
+
+        if field in {"strengths", "limitations"}:
+            points = [
+                clean_output(item, maximum_length=260)
+                for item in re.split(r"\n+|;\s+", value)
+                if item.strip()
+            ]
+
+            result[field] = format_points(
+                points,
+                fallback="Not clearly stated",
+            )
+        elif field == "keywords":
+            result[field] = clean_pdf_text(value)
+        else:
+            result[field] = clean_output(value)
+
+    return result
+
+
 def heuristic_analysis(text: str) -> dict[str, str]:
-    cleaned = " ".join(text.replace("\x00", " ").split())
+    cleaned = clean_pdf_text(text)
+    sentences = make_sentences(cleaned)
 
-    sentences = [
-        sentence.strip()
-        for sentence in re.split(r"(?<=[.!?])\s+", cleaned)
-        if 35 <= len(sentence.strip()) <= 1200
-    ]
-
-    def find_sentences(
+    def first_match(
         phrases: list[str],
-        limit: int = 2,
-    ) -> str | None:
-        matches: list[str] = []
-
-        for sentence in sentences:
-            lowered = sentence.lower()
-
-            if any(phrase in lowered for phrase in phrases):
-                matches.append(sentence)
-
-            if len(matches) >= limit:
-                break
+        fallback: str = "Not clearly stated",
+    ) -> str:
+        matches = find_matching_sentences(
+            sentences,
+            phrases,
+            limit=1,
+        )
 
         if not matches:
-            return None
+            return fallback
 
-        return " ".join(matches)[:1000]
+        return clean_output(matches[0], maximum_length=700)
 
-    def first_substantial_sentences(
-        start: int = 0,
-        count: int = 2,
-    ) -> str:
-        selected: list[str] = []
-
-        for sentence in sentences[start:]:
-            lowered = sentence.lower()
-
-            if any(
-                unwanted in lowered
-                for unwanted in [
-                    "copyright",
-                    "isbn",
-                    "all rights reserved",
-                    "table of contents",
-                    "published by",
-                    "http://",
-                    "https://",
-                ]
-            ):
-                continue
-
-            selected.append(sentence)
-
-            if len(selected) >= count:
-                break
-
-        return " ".join(selected)[:1000] or "Not clearly stated"
-
-    objective = find_sentences(
+    objective = first_match(
         [
-            "aim",
-            "objective",
-            "purpose",
-            "focuses on",
+            "the aim of this study",
+            "this study aims",
+            "the objective of this study",
+            "the purpose of this study",
+            "this paper aims",
+            "this paper presents",
+            "this paper provides",
+            "this review provides",
             "provides an overview",
             "presents an overview",
-            "introduces",
-            "explores",
-            "examines",
-            "investigates",
-            "discusses",
-            "this paper",
-            "this chapter",
-            "this book",
-            "this work",
+            "this chapter introduces",
+            "this chapter discusses",
+            "this work investigates",
             "we propose",
             "we present",
-        ]
+        ],
+        fallback=(
+            "The document's central objective was not clearly stated in the "
+            "extracted text."
+        ),
     )
 
-    if not objective:
-        objective = first_substantial_sentences(0, 2)
-
-    methodology = find_sentences(
+    methodology = first_match(
         [
-            "method",
-            "methodology",
-            "approach",
-            "algorithm",
-            "model",
-            "framework",
-            "technique",
-            "procedure",
-            "experiment",
-            "implemented",
-            "trained",
-            "evaluated",
-            "classification",
-            "regression",
-            "neural network",
-            "machine learning",
-            "deep learning",
-        ]
-    )
-
-    if not methodology:
-        methodology = (
+            "the proposed method",
+            "the methodology",
+            "our methodology",
+            "we used",
+            "we employed",
+            "was performed using",
+            "was analysed using",
+            "experimental procedure",
+            "experimental design",
+            "machine learning model",
+            "deep learning model",
+            "the algorithm",
+            "the framework",
+            "the approach",
+        ],
+        fallback=(
             "No single experimental methodology was clearly identified. "
-            "The document appears to discuss multiple machine-learning "
-            "methods, algorithms or applications."
-        )
+            "The document may be a review, overview or collection of methods."
+        ),
+    )
 
-    dataset = find_sentences(
+    dataset = first_match(
         [
-            "dataset",
-            "data set",
-            "database",
-            "data were",
-            "data was",
-            "samples",
-            "participants",
-            "images",
-            "records",
+            "the dataset consisted",
+            "the dataset contains",
+            "the dataset included",
+            "data were collected",
+            "data was collected",
+            "participants were",
+            "samples were collected",
+            "images were obtained",
+            "records were obtained",
+            "training dataset",
             "training data",
+            "test dataset",
             "test data",
-            "validation data",
-            "benchmark",
-            "corpus",
-        ]
+            "validation dataset",
+            "benchmark dataset",
+            "public dataset",
+        ],
+        fallback=(
+            "No specific dataset, participant group or sample was clearly "
+            "identified in the extracted text."
+        ),
     )
 
-    if not dataset:
-        dataset = (
-            "No specific dataset was clearly identified in the extracted text."
-        )
-
-    findings = find_sentences(
+    findings = first_match(
         [
-            "results",
-            "findings",
-            "showed",
-            "demonstrated",
-            "achieved",
-            "accuracy",
-            "performance",
+            "the results show",
+            "the results showed",
+            "results demonstrate",
+            "results demonstrated",
+            "we found that",
+            "the study found",
+            "achieved an accuracy",
+            "achieved a performance",
             "outperformed",
-            "improved",
-            "concluded",
-            "conclusion",
-            "suggests that",
-            "indicates that",
-        ]
-    )
-
-    if not findings:
-        findings = (
+            "significantly improved",
+            "the findings indicate",
+            "the findings suggest",
+        ],
+        fallback=(
             "No single set of experimental findings was clearly identified. "
-            "The document may be an overview, textbook chapter or collection "
-            "rather than one experimental study."
-        )
+            "The document may be an overview or review rather than one study."
+        ),
+    )
 
-    strengths = find_sentences(
+    strength_matches = find_matching_sentences(
+        sentences,
         [
-            "strength",
-            "advantage",
-            "benefit",
-            "effective",
-            "robust",
-            "high accuracy",
-            "high performance",
+            "a strength of this study",
+            "strengths of this study",
+            "the main strength",
+            "an advantage of",
+            "advantages include",
+            "properties including",
+            "properties include",
+            "demonstrated robust",
+            "achieved high accuracy",
+            "achieved strong performance",
             "outperformed",
-            "improved",
+            "significantly improved",
+            "large specific surface area",
+            "high sensitivity",
+            "high selectivity",
+            "biocompatibility",
             "efficient",
-            "comprehensive",
-            "practical",
-            "novel",
-        ]
+            "effective",
+        ],
+        limit=3,
     )
 
-    if not strengths:
-        strengths = (
-            "The document provides broad coverage of machine-learning "
-            "algorithms and applications, although explicit strengths were "
-            "not stated in a dedicated section."
-        )
+    strength_points: list[str] = []
 
-    limitations = find_sentences(
+    for match in strength_matches:
+        extracted = split_candidate_points(match, limit=4)
+
+        if extracted:
+            strength_points.extend(extracted)
+        else:
+            strength_points.append(match)
+
+        if len(strength_points) >= 4:
+            break
+
+    strengths = format_points(
+        strength_points,
+        fallback=(
+            "No explicitly stated strengths were identified in the extracted "
+            "text."
+        ),
+    )
+
+    limitation_matches = find_matching_sentences(
+        sentences,
         [
-            "limitation",
+            "a limitation of this study",
+            "limitations of this study",
+            "the main limitation",
+            "one limitation",
             "limited by",
-            "drawback",
-            "disadvantage",
-            "challenge",
-            "constraint",
-            "future work",
-            "future research",
-            "further research",
-            "should be interpreted with caution",
-            "remains difficult",
+            "a drawback",
+            "a disadvantage",
             "remains challenging",
-        ]
+            "remains a challenge",
+            "major challenge",
+            "key challenge",
+            "results should be interpreted with caution",
+            "further research is needed",
+            "future studies should",
+            "future work should",
+        ],
+        limit=4,
     )
 
-    if not limitations:
-        limitations = (
-            "No explicit limitations section was identified. Because the "
-            "document covers a broad topic, the extracted text may not describe "
-            "the constraints of one specific experiment."
+    limitation_points: list[str] = []
+
+    for match in limitation_matches:
+        # Do not show vague section-introduction text as a limitation.
+        lowered = match.lower()
+
+        vague_only = (
+            "future prospects and challenges" in lowered
+            and not any(
+                phrase in lowered
+                for phrase in [
+                    "limited by",
+                    "limitation",
+                    "drawback",
+                    "disadvantage",
+                    "remains challenging",
+                    "major challenge",
+                    "key challenge",
+                ]
+            )
         )
+
+        if vague_only:
+            continue
+
+        extracted = split_candidate_points(match, limit=3)
+
+        if extracted:
+            limitation_points.extend(extracted)
+        else:
+            limitation_points.append(match)
+
+        if len(limitation_points) >= 4:
+            break
+
+    limitations = format_points(
+        limitation_points,
+        fallback=(
+            "No clearly stated limitations were identified in the extracted "
+            "text."
+        ),
+    )
 
     stopwords = {
         "the",
@@ -329,6 +569,9 @@ def heuristic_analysis(text: str) -> dict[str, str]:
         "based",
         "chapter",
         "book",
+        "introduction",
+        "conclusion",
+        "authors",
     }
 
     words = re.findall(
@@ -337,12 +580,14 @@ def heuristic_analysis(text: str) -> dict[str, str]:
     )
 
     counts = Counter(
-        word for word in words
+        word
+        for word in words
         if word not in stopwords
     )
 
     keywords = ", ".join(
-        word for word, _ in counts.most_common(8)
+        word
+        for word, _ in counts.most_common(8)
     )
 
     return {

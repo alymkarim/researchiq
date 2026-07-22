@@ -23,11 +23,10 @@ export interface SearchResult {
   document_id?: number;
   document_title?: string;
   filename?: string;
+  page?: number;
+  score?: number;
   text?: string;
   snippet?: string;
-  score?: number;
-  page?: number;
-  [key: string]: unknown;
 }
 
 export interface ComparisonResult {

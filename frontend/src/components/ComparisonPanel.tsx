@@ -19,14 +19,47 @@ function renderValue(value: unknown) {
   if (Array.isArray(value)) {
     return (
       <ul>
-        {value.map((item, index) => (
-          <li key={`${index}-${String(item)}`}>{String(item)}</li>
-        ))}
+        {value.map((item, index) => {
+          if (typeof item === "string" || typeof item === "number") {
+            return <li key={`${index}-${item}`}>{item}</li>;
+          }
+
+          if (item && typeof item === "object") {
+            const objectItem = item as Record<string, unknown>;
+
+            const label =
+              objectItem.title ??
+              objectItem.filename ??
+              objectItem.name ??
+              objectItem.paper_title ??
+              `Paper ${index + 1}`;
+
+            return <li key={`${index}-${String(label)}`}>{String(label)}</li>;
+          }
+
+          return <li key={index}>Paper {index + 1}</li>;
+        })}
       </ul>
     );
   }
 
+  if (value && typeof value === "object") {
+    return (
+      <div>
+        {Object.entries(value as Record<string, unknown>).map(
+          ([key, nestedValue]) => (
+            <div key={key}>
+              <strong>{key.replace(/_/g, " ")}:</strong>{" "}
+              {String(nestedValue)}
+            </div>
+          ),
+        )}
+      </div>
+    );
+  }
+
   if (value == null || value === "") return null;
+
   return <p>{String(value)}</p>;
 }
 

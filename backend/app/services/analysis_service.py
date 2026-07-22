@@ -90,128 +90,210 @@ def heuristic_analysis(text: str) -> dict[str, str]:
     sentences = [
         sentence.strip()
         for sentence in re.split(r"(?<=[.!?])\s+", cleaned)
-        if len(sentence.strip()) >= 40
+        if 35 <= len(sentence.strip()) <= 1200
     ]
 
-    def sentence_matches(sentence: str, phrases: list[str]) -> bool:
-        lowered = sentence.lower()
-        return any(phrase in lowered for phrase in phrases)
-
-    def first_matching(
+    def find_sentences(
         phrases: list[str],
-        fallback: str = "Not clearly stated",
-    ) -> str:
+        limit: int = 2,
+    ) -> str | None:
+        matches: list[str] = []
+
         for sentence in sentences:
-            if sentence_matches(sentence, phrases):
-                return sentence[:700]
+            lowered = sentence.lower()
 
-        return fallback
+            if any(phrase in lowered for phrase in phrases):
+                matches.append(sentence)
 
-    objective = first_matching(
+            if len(matches) >= limit:
+                break
+
+        if not matches:
+            return None
+
+        return " ".join(matches)[:1000]
+
+    def first_substantial_sentences(
+        start: int = 0,
+        count: int = 2,
+    ) -> str:
+        selected: list[str] = []
+
+        for sentence in sentences[start:]:
+            lowered = sentence.lower()
+
+            if any(
+                unwanted in lowered
+                for unwanted in [
+                    "copyright",
+                    "isbn",
+                    "all rights reserved",
+                    "table of contents",
+                    "published by",
+                    "http://",
+                    "https://",
+                ]
+            ):
+                continue
+
+            selected.append(sentence)
+
+            if len(selected) >= count:
+                break
+
+        return " ".join(selected)[:1000] or "Not clearly stated"
+
+    objective = find_sentences(
         [
-            "the aim of this study",
-            "this study aims",
-            "the objective of this study",
-            "the purpose of this study",
+            "aim",
+            "objective",
+            "purpose",
+            "focuses on",
+            "provides an overview",
+            "presents an overview",
+            "introduces",
+            "explores",
+            "examines",
+            "investigates",
+            "discusses",
+            "this paper",
+            "this chapter",
+            "this book",
+            "this work",
             "we propose",
             "we present",
-            "this paper proposes",
-            "this paper presents",
-            "this work investigates",
         ]
     )
 
-    methodology = first_matching(
+    if not objective:
+        objective = first_substantial_sentences(0, 2)
+
+    methodology = find_sentences(
         [
-            "the proposed method",
-            "our methodology",
-            "the methodology",
-            "we used",
-            "we employed",
-            "was performed using",
-            "was analysed using",
-            "experimental procedure",
-            "machine learning model",
-            "deep learning model",
-            "algorithm was",
+            "method",
+            "methodology",
+            "approach",
+            "algorithm",
+            "model",
+            "framework",
+            "technique",
+            "procedure",
+            "experiment",
+            "implemented",
+            "trained",
+            "evaluated",
+            "classification",
+            "regression",
+            "neural network",
+            "machine learning",
+            "deep learning",
         ]
     )
 
-    dataset = first_matching(
+    if not methodology:
+        methodology = (
+            "No single experimental methodology was clearly identified. "
+            "The document appears to discuss multiple machine-learning "
+            "methods, algorithms or applications."
+        )
+
+    dataset = find_sentences(
         [
-            "the dataset consisted",
-            "the dataset contains",
-            "the dataset included",
-            "data were collected",
-            "data was collected",
-            "participants were",
-            "samples were",
-            "images were obtained",
-            "records were obtained",
-            "training dataset",
-            "test dataset",
-            "validation dataset",
-        ],
-        fallback=(
-            "No clearly described dataset, sample or participant group "
-            "was identified."
-        ),
+            "dataset",
+            "data set",
+            "database",
+            "data were",
+            "data was",
+            "samples",
+            "participants",
+            "images",
+            "records",
+            "training data",
+            "test data",
+            "validation data",
+            "benchmark",
+            "corpus",
+        ]
     )
 
-    findings = first_matching(
+    if not dataset:
+        dataset = (
+            "No specific dataset was clearly identified in the extracted text."
+        )
+
+    findings = find_sentences(
         [
-            "the results show",
-            "the results showed",
-            "results demonstrate",
-            "results demonstrated",
-            "we found that",
-            "the study found",
-            "achieved an accuracy",
-            "achieved a performance",
+            "results",
+            "findings",
+            "showed",
+            "demonstrated",
+            "achieved",
+            "accuracy",
+            "performance",
             "outperformed",
-            "significantly improved",
+            "improved",
+            "concluded",
+            "conclusion",
+            "suggests that",
+            "indicates that",
         ]
     )
 
-    strengths = first_matching(
+    if not findings:
+        findings = (
+            "No single set of experimental findings was clearly identified. "
+            "The document may be an overview, textbook chapter or collection "
+            "rather than one experimental study."
+        )
+
+    strengths = find_sentences(
         [
-            "a strength of this study",
-            "strengths of this study",
-            "the main strength",
-            "an advantage of this method",
-            "an advantage of the proposed",
-            "our method outperformed",
-            "the proposed method outperformed",
-            "demonstrated robust performance",
-            "achieved high accuracy",
-            "achieved strong performance",
-            "provides a comprehensive",
-            "offers a practical",
-        ],
-        fallback=(
-            "No explicitly stated strengths were identified. "
-            "Review the methodology and results to infer potential strengths."
-        ),
+            "strength",
+            "advantage",
+            "benefit",
+            "effective",
+            "robust",
+            "high accuracy",
+            "high performance",
+            "outperformed",
+            "improved",
+            "efficient",
+            "comprehensive",
+            "practical",
+            "novel",
+        ]
     )
 
-    limitations = first_matching(
+    if not strengths:
+        strengths = (
+            "The document provides broad coverage of machine-learning "
+            "algorithms and applications, although explicit strengths were "
+            "not stated in a dedicated section."
+        )
+
+    limitations = find_sentences(
         [
-            "a limitation of this study",
-            "limitations of this study",
-            "the main limitation",
-            "one limitation",
-            "study limitations",
+            "limitation",
             "limited by",
-            "results should be interpreted with caution",
-            "further research is needed",
-            "future studies should",
-            "future work should",
-        ],
-        fallback=(
-            "No clearly stated limitations were identified. "
-            "Review the discussion and conclusion for possible constraints."
-        ),
+            "drawback",
+            "disadvantage",
+            "challenge",
+            "constraint",
+            "future work",
+            "future research",
+            "further research",
+            "should be interpreted with caution",
+            "remains difficult",
+            "remains challenging",
+        ]
     )
+
+    if not limitations:
+        limitations = (
+            "No explicit limitations section was identified. Because the "
+            "document covers a broad topic, the extracted text may not describe "
+            "the constraints of one specific experiment."
+        )
 
     stopwords = {
         "the",
@@ -245,6 +327,8 @@ def heuristic_analysis(text: str) -> dict[str, str]:
         "methods",
         "research",
         "based",
+        "chapter",
+        "book",
     }
 
     words = re.findall(
@@ -253,14 +337,12 @@ def heuristic_analysis(text: str) -> dict[str, str]:
     )
 
     counts = Counter(
-        word
-        for word in words
+        word for word in words
         if word not in stopwords
     )
 
     keywords = ", ".join(
-        word
-        for word, _ in counts.most_common(8)
+        word for word, _ in counts.most_common(8)
     )
 
     return {

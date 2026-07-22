@@ -10,7 +10,7 @@ class AnalysisOut(BaseModel):
     methodology: str
     dataset: str
     findings: str
-    strengths: str | None = None
+    strengths: str
     limitations: str
     keywords: str
     created_at: datetime

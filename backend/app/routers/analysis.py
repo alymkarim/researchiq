@@ -23,7 +23,7 @@ async def create_analysis(document_id: int, db: Session = Depends(get_db)):
     analysis.methodology = result["methodology"]
     analysis.dataset = result["dataset"]
     analysis.findings = result["findings"]
-    analysis.strengths = result.get("strengths")
+    analysis.strengths = result.get("strengths", "")
     analysis.limitations = result["limitations"]
     analysis.keywords = result["keywords"]
     

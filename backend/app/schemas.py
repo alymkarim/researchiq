@@ -29,9 +29,9 @@ class SearchRequest(BaseModel):
 
 class SearchResult(BaseModel):
     document_id: int
-    title: str
+    document_title: str
     filename: str
-    excerpt: str
+    text: str
     score: float
 
 class CompareRequest(BaseModel):

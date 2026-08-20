@@ -58,10 +58,10 @@ export function UploadPanel({ busy, onUpload }: UploadPanelProps) {
   }
 
   return (
-    <section className="lab-panel upload-panel" id="upload">
+    <section className="upload-panel" id="upload">
       <div className="panel-heading">
         <div>
-          <span className="section-kicker">Specimen intake</span>
+          <span className="panel-kicker">Specimen intake</span>
           <h2>Feed the paper machine</h2>
         </div>
         <span className="panel-number">01</span>
@@ -94,26 +94,33 @@ export function UploadPanel({ busy, onUpload }: UploadPanelProps) {
           hidden
         />
 
-        <span className="drop-icon">
-          <UploadCloud size={35} />
+        <span className="drop-zone-icon">
+          <UploadCloud size={32} />
         </span>
 
-        <strong>Drop research papers here</strong>
-        <span>or click to browse your suspiciously organised folders</span>
-        <small>PDF only · Multiple papers supported</small>
+        <strong className="drop-zone-title">
+          Drop research papers here
+        </strong>
+        <span className="drop-zone-hint">
+          or click to browse your files
+        </span>
+        <small className="drop-zone-format">
+          PDF only · Multiple papers supported
+        </small>
       </div>
 
       {selectedFiles.length > 0 && (
         <div className="selected-files">
           {selectedFiles.map((file) => (
             <div className="selected-file" key={`${file.name}-${file.size}`}>
-              <FileText size={18} />
+              <FileText size={16} />
               <span>
                 <strong>{file.name}</strong>
                 <small>{(file.size / 1024 / 1024).toFixed(2)} MB</small>
               </span>
               <button
                 type="button"
+                className="selected-file-remove"
                 onClick={() =>
                   setSelectedFiles((current) =>
                     current.filter((candidate) => candidate !== file),
@@ -121,7 +128,7 @@ export function UploadPanel({ busy, onUpload }: UploadPanelProps) {
                 }
                 aria-label={`Remove ${file.name}`}
               >
-                <X size={17} />
+                <X size={14} />
               </button>
             </div>
           ))}
@@ -129,18 +136,18 @@ export function UploadPanel({ busy, onUpload }: UploadPanelProps) {
       )}
 
       <button
-        className="primary-button full-width"
+        className="upload-submit-btn"
         onClick={submit}
         disabled={!selectedFiles.length || busy}
       >
         {busy ? (
           <>
-            <LoaderCircle className="spin" size={19} />
-            Processing specimen...
+            <LoaderCircle className="spin" size={18} />
+            Processing...
           </>
         ) : (
           <>
-            <Zap size={19} />
+            <Zap size={18} />
             Begin experiment
           </>
         )}

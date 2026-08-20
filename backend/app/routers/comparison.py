@@ -11,7 +11,7 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=ComparisonOut)
+@router.post("", response_model=ComparisonOut)
 def compare_documents(
     request: ComparisonRequest,
     db: Session = Depends(get_db),

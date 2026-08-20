@@ -133,8 +133,22 @@ export async function getHealth(): Promise<HealthStatus> {
 }
 
 
-export async function getDocuments(): Promise<DocumentItem[]> {
-  return apiFetch<DocumentItem[]>("/api/documents");
+export interface PaginatedDocuments {
+  items: DocumentItem[];
+  total: number;
+  page: number;
+  per_page: number;
+  pages: number;
+}
+
+
+export async function getDocuments(
+  page = 1,
+  perPage = 100,
+): Promise<PaginatedDocuments> {
+  return apiFetch<PaginatedDocuments>(
+    `/api/documents?page=${page}&per_page=${perPage}`,
+  );
 }
 
 

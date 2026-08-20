@@ -110,6 +110,14 @@ class ComparisonPaper(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PaginatedDocuments(BaseModel):
+    items: list[DocumentOut]
+    total: int
+    page: int
+    per_page: int
+    pages: int
+
+
 class ComparisonOut(BaseModel):
     # Supports the original comparison response.
     documents: list[DocumentOut] = Field(

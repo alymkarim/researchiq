@@ -4,20 +4,23 @@ from pathlib import Path
 from uuid import uuid4
 
 import fitz
+import math
+
 from fastapi import (
     APIRouter,
     Depends,
     File,
     HTTPException,
+    Query,
     UploadFile,
     status,
 )
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from ..database import get_db
 from ..models import Document
-from ..schemas import DocumentOut
+from ..schemas import DocumentOut, PaginatedDocuments
 from ..utils.text import clean_text as clean_extracted_text
 
 
@@ -249,18 +252,35 @@ def build_document_from_pdf(
 
 @router.get(
     "",
-    response_model=list[DocumentOut],
+    response_model=PaginatedDocuments,
 )
 def get_documents(
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=20, ge=1, le=100),
     db: Session = Depends(get_db),
-) -> list[Document]:
+) -> PaginatedDocuments:
+    total = db.scalar(select(func.count(Document.id)))
+    total = total or 0
+    pages = max(1, math.ceil(total / per_page))
+    offset = (page - 1) * per_page
+
     statement = (
         select(Document)
         .options(selectinload(Document.analysis))
         .order_by(Document.created_at.desc())
+        .offset(offset)
+        .limit(per_page)
     )
 
-    return list(db.scalars(statement).all())
+    items = list(db.scalars(statement).all())
+
+    return PaginatedDocuments(
+        items=[DocumentOut.model_validate(d) for d in items],
+        total=total,
+        page=page,
+        per_page=per_page,
+        pages=pages,
+    )
 
 
 @router.get(

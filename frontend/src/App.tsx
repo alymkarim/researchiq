@@ -87,7 +87,7 @@ export default function App() {
     try {
       const data = await getDocuments();
 
-      setDocuments(data);
+      setDocuments(data.items);
       setOnline(true);
     } catch (error) {
       setOnline(false);

@@ -12,10 +12,12 @@ import {
 } from "lucide-react";
 import type { Analysis, DocumentItem } from "../types";
 import { CitationExport } from "./CitationExport";
+import { Recommendations } from "./Recommendations";
 
 interface AnalysisPanelProps {
   document?: DocumentItem | null;
   analysis?: Analysis | null;
+  onSelectDocument?: (id: number) => void;
 }
 
 function CollapsibleSection({
@@ -48,7 +50,7 @@ function CollapsibleSection({
   );
 }
 
-export function AnalysisPanel({ document, analysis }: AnalysisPanelProps) {
+export function AnalysisPanel({ document, analysis, onSelectDocument }: AnalysisPanelProps) {
   if (!document) {
     return (
       <div className="analysis-panel empty">
@@ -178,6 +180,13 @@ export function AnalysisPanel({ document, analysis }: AnalysisPanelProps) {
       )}
 
       <CitationExport documentId={document.id} />
+
+      {onSelectDocument && (
+        <Recommendations
+          documentId={document.id}
+          onSelectDocument={onSelectDocument}
+        />
+      )}
     </article>
   );
 }

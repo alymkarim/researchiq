@@ -341,6 +341,20 @@ export function getDocumentPdfUrl(id: number): string {
 }
 
 
+export async function getRecommendations(
+  documentId: number,
+): Promise<{
+  document_id: number;
+  recommendations: Array<{
+    document_id: number;
+    title: string;
+    similarity: number;
+  }>;
+}> {
+  return apiFetch(`/api/recommendations/${documentId}`);
+}
+
+
 export async function getCitation(
   documentId: number,
   format: string,

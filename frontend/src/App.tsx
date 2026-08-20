@@ -280,6 +280,15 @@ function AuthenticatedApp() {
     }
   }
 
+  function handleSelectDocument(id: number) {
+    const doc = documents.find((d) => d.id === id);
+    if (doc) {
+      setActiveDocumentId(id);
+      setActiveAnalysis(doc.analysis || null);
+      openWorkspace("analysis");
+    }
+  }
+
   async function handleSearch(query: string) {
     setSearching(true);
     setActiveTab("search");
@@ -504,6 +513,7 @@ function AuthenticatedApp() {
                     activeAnalysis ||
                     activeDocument?.analysis
                   }
+                  onSelectDocument={handleSelectDocument}
                 />
               )}
 

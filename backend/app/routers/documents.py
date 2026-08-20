@@ -15,6 +15,7 @@ from fastapi import (
     UploadFile,
     status,
 )
+from fastapi.responses import FileResponse
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
@@ -306,6 +307,30 @@ def get_document(
         )
 
     return document
+
+
+@router.get("/{document_id}/pdf")
+def get_document_pdf(
+    document_id: int,
+    db: Session = Depends(get_db),
+) -> FileResponse:
+    document = db.get(Document, document_id)
+
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found.",
+        )
+
+    file_path = Path(document.file_path)
+
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="PDF file not found.",
+        )
+
+    return FileResponse(file_path, media_type="application/pdf")
 
 
 @router.post(

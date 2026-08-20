@@ -15,6 +15,7 @@ import { ComparisonPanel } from "./components/ComparisonPanel";
 import { Header } from "./components/Header";
 import { Hero } from "./components/Hero";
 import { PaperVault } from "./components/PaperVault";
+import { PdfViewer } from "./components/PdfViewer";
 import { ResearchConsole } from "./components/ResearchConsole";
 import { SystemStatus } from "./components/SystemStatus";
 import { Toast } from "./components/Toast";
@@ -86,6 +87,11 @@ function AuthenticatedApp() {
 
   const [activeTab, setActiveTab] =
     useState<WorkspaceTab>("overview");
+
+  const [pdfViewer, setPdfViewer] = useState<{
+    documentId: number;
+    title: string;
+  } | null>(null);
 
   const activeDocument = useMemo(
     () =>
@@ -164,6 +170,10 @@ function AuthenticatedApp() {
     });
   });
 }
+
+  function handleViewPdf(documentId: number, title: string) {
+    setPdfViewer({ documentId, title });
+  }
 
   function toggleDocument(id: number) {
     setSelectedIds((current) =>
@@ -371,6 +381,7 @@ function AuthenticatedApp() {
                 onToggle={toggleDocument}
                 onAnalyse={handleAnalyse}
                 onDelete={handleDelete}
+                onView={handleViewPdf}
               />
             </div>
           </aside>
@@ -526,6 +537,14 @@ function AuthenticatedApp() {
           message={toast.message}
           type={toast.type}
           onClose={() => setToast(null)}
+        />
+      )}
+
+      {pdfViewer && (
+        <PdfViewer
+          documentId={pdfViewer.documentId}
+          title={pdfViewer.title}
+          onClose={() => setPdfViewer(null)}
         />
       )}
     </div>

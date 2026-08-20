@@ -334,3 +334,8 @@ export async function registerUser(
     body: JSON.stringify({ email, username, password }),
   });
 }
+
+
+export function getDocumentPdfUrl(id: number): string {
+  return `${API_URL}/api/documents/${id}/pdf`;
+}

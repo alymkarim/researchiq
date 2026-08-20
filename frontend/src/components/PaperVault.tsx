@@ -6,6 +6,7 @@ import {
   LoaderCircle,
   Microscope,
   Trash2,
+  Eye,
 } from "lucide-react";
 import type { DocumentItem } from "../types";
 
@@ -17,6 +18,7 @@ interface PaperVaultProps {
   onToggle: (id: number) => void;
   onAnalyse: (id: number) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
+  onView: (id: number, title: string) => void;
 }
 
 function formatDate(value?: string | null) {
@@ -60,6 +62,7 @@ export function PaperVault({
   onToggle,
   onAnalyse,
   onDelete,
+  onView,
 }: PaperVaultProps) {
   return (
     <section className="paper-vault" id="vault">
@@ -142,6 +145,15 @@ export function PaperVault({
                 </div>
 
                 <div className="paper-card-actions">
+                  <button
+                    className="btn-paper btn-view"
+                    onClick={() =>
+                      onView(document.id, document.title || document.filename)
+                    }
+                  >
+                    <Eye size={15} />
+                    View
+                  </button>
                   <button
                     className="btn-paper btn-analyse"
                     onClick={() => onAnalyse(document.id)}

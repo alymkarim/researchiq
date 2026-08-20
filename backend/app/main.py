@@ -4,11 +4,11 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from .config import settings
-from .database import Base, engine, get_db
+from .database import get_db
 from .routers import analysis, comparison, documents, search
 
 
-Base.metadata.create_all(bind=engine)
+
 
 app = FastAPI(
     title="ResearchIQ API",

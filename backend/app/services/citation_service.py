@@ -1,7 +1,11 @@
 def to_bibtex(doc) -> str:
-    key = f"{doc.authors.split(',')[0].split()[-1].lower()}{doc.created_at.year if doc.created_at else 'nd'}"
+    year = doc.created_at.year if doc.created_at else "nd"
+    if doc.authors:
+        first_author = doc.authors.split(",")[0].split()[-1].lower()
+    else:
+        first_author = doc.filename.split(".")[0].lower()[:20]
+    key = f"{first_author}{year}"
     authors = doc.authors or "Unknown"
-    year = doc.created_at.year if doc.created_at else "n.d."
     title = doc.title or doc.filename
     return f"""@article{{{key},
   title={{{title}}},

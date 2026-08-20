@@ -15,11 +15,11 @@ def test_register_success(client):
 def test_register_duplicate_email(client):
     client.post(
         "/api/auth/register",
-        json={"email": "test@example.com", "username": "user1", "password": "pass123"},
+        json={"email": "test@example.com", "username": "user1", "password": "pass1234"},
     )
     response = client.post(
         "/api/auth/register",
-        json={"email": "test@example.com", "username": "user2", "password": "pass456"},
+        json={"email": "test@example.com", "username": "user2", "password": "pass4567"},
     )
     assert response.status_code == 409
     assert "already taken" in response.json()["detail"]
@@ -28,11 +28,11 @@ def test_register_duplicate_email(client):
 def test_register_duplicate_username(client):
     client.post(
         "/api/auth/register",
-        json={"email": "a@example.com", "username": "sameuser", "password": "pass123"},
+        json={"email": "a@example.com", "username": "sameuser", "password": "pass1234"},
     )
     response = client.post(
         "/api/auth/register",
-        json={"email": "b@example.com", "username": "sameuser", "password": "pass456"},
+        json={"email": "b@example.com", "username": "sameuser", "password": "pass4567"},
     )
     assert response.status_code == 409
     assert "already taken" in response.json()["detail"]
@@ -69,7 +69,7 @@ def test_login_wrong_password(client):
 def test_login_nonexistent_email(client):
     response = client.post(
         "/api/auth/login",
-        json={"email": "nonexistent@example.com", "password": "pass123"},
+        json={"email": "nonexistent@example.com", "password": "pass1234"},
     )
     assert response.status_code == 401
     assert "Invalid email or password" in response.json()["detail"]

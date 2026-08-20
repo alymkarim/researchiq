@@ -8,6 +8,9 @@ def find_related_documents(target_doc, all_documents, limit=3):
     if not docs:
         return []
 
+    # Limit to 20 documents to prevent OOM
+    docs = docs[:20]
+
     corpus = [target_doc.full_text[:5000]] + [d.full_text[:5000] for d in docs]
 
     vectorizer = TfidfVectorizer(stop_words="english", max_features=3000)

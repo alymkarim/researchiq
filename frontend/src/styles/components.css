@@ -1896,3 +1896,391 @@
   color: var(--success);
   background: rgba(0, 184, 148, 0.1);
 }
+
+/* ── Responsive – Tablet (768–1024px) ────────────────────── */
+
+@media (max-width: 1024px) {
+  .site-header {
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .header-nav {
+    gap: 0;
+  }
+
+  .header-nav button {
+    padding: var(--space-2) var(--space-2);
+    font-size: 0.8125rem;
+  }
+
+  .hero {
+    min-height: auto;
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .hero-title {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+  }
+
+  .overview-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analysis-two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .console-search {
+    flex-direction: column;
+  }
+
+  .console-submit {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .comparison-action {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pdf-viewer-controls {
+    gap: var(--space-1);
+  }
+
+  .pdf-viewer-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .pdf-viewer-close {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* ── Responsive – Mobile (<768px) ────────────────────────── */
+
+@media (max-width: 768px) {
+  .site-header {
+    flex-wrap: wrap;
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .brand-name {
+    font-size: 1rem;
+  }
+
+  .header-nav {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    gap: var(--space-1);
+    padding: 0 var(--space-1);
+  }
+
+  .header-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .header-nav button {
+    font-size: 0.75rem;
+    padding: var(--space-1) var(--space-2);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .header-username {
+    display: none;
+  }
+
+  .hero {
+    min-height: auto;
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .hero-title {
+    font-size: clamp(1.5rem, 7vw, 2.25rem);
+  }
+
+  .hero-subtitle {
+    font-size: 0.9375rem;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .hero-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .hero-doc-count {
+    margin-top: var(--space-4);
+  }
+
+  .upload-panel {
+    padding: var(--space-3);
+  }
+
+  .panel-heading {
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+  }
+
+  .drop-zone {
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .drop-zone-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .paper-vault {
+    padding: var(--space-3);
+  }
+
+  .vault-toolbar {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .paper-grid {
+    gap: var(--space-2);
+  }
+
+  .paper-card {
+    padding: var(--space-3);
+  }
+
+  .paper-card-actions {
+    flex-wrap: wrap;
+  }
+
+  .btn-paper {
+    font-size: 0.75rem;
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .analysis-panel {
+    padding: var(--space-3);
+  }
+
+  .analysis-section-header {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .analysis-section-body {
+    padding: 0 var(--space-3) var(--space-3);
+  }
+
+  .analysis-summary-card {
+    padding: var(--space-3);
+  }
+
+  .keyword-chips {
+    gap: var(--space-1);
+  }
+
+  .keyword-chip {
+    font-size: 0.6875rem;
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .research-console {
+    padding: var(--space-3);
+  }
+
+  .console-search {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .console-submit {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .console-result-card {
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3);
+  }
+
+  .console-result-score {
+    flex-direction: row;
+    gap: var(--space-2);
+    min-width: auto;
+    justify-content: center;
+  }
+
+  .comparison-panel {
+    padding: var(--space-3);
+  }
+
+  .comparison-header {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .comparison-chip {
+    max-width: 100%;
+  }
+
+  .comparison-chip-text {
+    max-width: 150px;
+  }
+
+  .comparison-action {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .comparison-object-key {
+    min-width: 90px;
+    font-size: 0.75rem;
+  }
+
+  .comparison-object-entry {
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .pdf-viewer-header {
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .pdf-viewer-title {
+    font-size: 0.8125rem;
+  }
+
+  .pdf-viewer-controls {
+    gap: var(--space-1);
+  }
+
+  .pdf-viewer-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .pdf-viewer-close {
+    width: 28px;
+    height: 28px;
+  }
+
+  .pdf-viewer-body {
+    padding: var(--space-2);
+  }
+
+  .pdf-viewer-footer {
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .citation-header {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .citation-formats {
+    flex-wrap: wrap;
+  }
+
+  .auth-card {
+    padding: var(--space-5);
+  }
+
+  .overview-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-card {
+    min-height: 140px;
+  }
+
+  .analysis-two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .status-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ── Responsive – Small Mobile (<480px) ──────────────────── */
+
+@media (max-width: 480px) {
+  .site-header {
+    padding: var(--space-2);
+  }
+
+  .brand-name {
+    font-size: 0.875rem;
+  }
+
+  .header-nav button {
+    font-size: 0.6875rem;
+    padding: var(--space-1) var(--space-1);
+  }
+
+  .hero {
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .hero-title {
+    font-size: 1.5rem;
+  }
+
+  .hero-subtitle {
+    font-size: 0.8125rem;
+  }
+
+  .upload-panel,
+  .paper-vault,
+  .analysis-panel,
+  .research-console,
+  .comparison-panel {
+    padding: var(--space-2);
+  }
+
+  .panel-heading h2 {
+    font-size: 1rem;
+  }
+
+  .paper-card-title {
+    font-size: 0.8125rem;
+  }
+
+  .analysis-title {
+    font-size: 1rem;
+  }
+
+  .console-input {
+    font-size: 0.8125rem;
+  }
+
+  .pdf-viewer-title {
+    font-size: 0.75rem;
+  }
+
+  .auth-card {
+    padding: var(--space-4);
+  }
+
+  .auth-card h1 {
+    font-size: 1.25rem;
+  }
+}

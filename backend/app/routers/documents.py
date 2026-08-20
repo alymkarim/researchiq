@@ -12,6 +12,7 @@ from fastapi import (
     File,
     HTTPException,
     Query,
+    Request,
     UploadFile,
     status,
 )
@@ -20,6 +21,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from ..database import get_db
+from ..limiter import limiter
 from ..models import Document
 from ..schemas import DocumentOut, PaginatedDocuments
 from ..utils.text import clean_text as clean_extracted_text
@@ -338,7 +340,9 @@ def get_document_pdf(
     response_model=list[DocumentOut],
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit("5/minute")
 async def upload_documents(
+    request: Request,
     files: list[UploadFile] = File(...),
     db: Session = Depends(get_db),
 ) -> list[Document]:

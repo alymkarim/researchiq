@@ -16,6 +16,10 @@ Built with React, FastAPI and PostgreSQL, the platform combines PDF processing, 
 - Full-text TF-IDF semantic search
 - Page-aware search results
 - Cross-paper comparison
+- User authentication (JWT)
+- Citation extraction
+- Paper recommendations
+- Rate limiting on auth and upload endpoints
 - REST API with automatic OpenAPI documentation
 - Health monitoring endpoint
 - Production deployment
@@ -68,6 +72,7 @@ https://your-render-backend.onrender.com/docs
 - Pydantic
 - PyMuPDF
 - Scikit-learn
+- SlowAPI (rate limiting)
 
 ### Database
 
@@ -186,6 +191,8 @@ LLM_BASE_URL=
 
 LLM_MODEL=
 
+JWT_SECRET=
+
 FRONTEND_ORIGIN=http://localhost:5173
 ```
 
@@ -225,6 +232,8 @@ When an OpenAI-compatible endpoint is configured, ResearchIQ performs richer AI-
 | POST | `/api/analysis/{id}` | Analyse a paper |
 | POST | `/api/search` | Search uploaded papers |
 | POST | `/api/comparison` | Compare selected papers |
+| POST | `/api/auth/register` | Register a new user |
+| POST | `/api/auth/login` | Login and get JWT token |
 | GET | `/api/health` | Health check |
 
 ---
@@ -247,9 +256,7 @@ pytest -v
 - OCR support for scanned PDFs
 - Citation graph visualisation
 - Research collections
-- User authentication
 - Export reports
-- Paper recommendations
 
 ---
 

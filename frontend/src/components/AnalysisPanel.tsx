@@ -11,6 +11,7 @@ import {
   TestTube,
 } from "lucide-react";
 import type { Analysis, DocumentItem } from "../types";
+import { CitationExport } from "./CitationExport";
 
 interface AnalysisPanelProps {
   document?: DocumentItem | null;
@@ -175,6 +176,8 @@ export function AnalysisPanel({ document, analysis }: AnalysisPanelProps) {
           </div>
         </div>
       )}
+
+      <CitationExport documentId={document.id} />
     </article>
   );
 }

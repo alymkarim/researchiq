@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from .config import settings
 from .database import get_db
-from .routers import analysis, auth, comparison, documents, search
+from .routers import analysis, auth, citations, comparison, documents, search
 
 
 
@@ -46,6 +46,7 @@ app.include_router(analysis.router)
 app.include_router(search.router)
 app.include_router(comparison.router)
 app.include_router(auth.router)
+app.include_router(citations.router)
 
 
 @app.get("/")

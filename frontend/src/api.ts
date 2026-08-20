@@ -339,3 +339,13 @@ export async function registerUser(
 export function getDocumentPdfUrl(id: number): string {
   return `${API_URL}/api/documents/${id}/pdf`;
 }
+
+
+export async function getCitation(
+  documentId: number,
+  format: string,
+): Promise<{ format: string; citation: string }> {
+  return apiFetch<{ format: string; citation: string }>(
+    `/api/citations/${documentId}?format=${format}`,
+  );
+}

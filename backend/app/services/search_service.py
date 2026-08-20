@@ -5,16 +5,7 @@ from typing import Any
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-
-def clean_text(value: str | None) -> str:
-    if not value:
-        return ""
-
-    value = value.replace("\x00", " ")
-    value = value.replace("\u00ad", "")
-    value = re.sub(r"\s+", " ", value)
-
-    return value.strip()
+from ..utils.text import clean_text
 
 
 def chunk_text(

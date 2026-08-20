@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session, selectinload
 from ..database import get_db
 from ..models import Document
 from ..schemas import DocumentOut
+from ..utils.text import clean_text as clean_extracted_text
 
 
 router = APIRouter(
@@ -29,24 +30,6 @@ UPLOAD_DIRECTORY = Path("uploads")
 UPLOAD_DIRECTORY.mkdir(parents=True, exist_ok=True)
 
 MAX_FILE_SIZE = 15 * 1024 * 1024  # 15 MB
-
-
-def clean_extracted_text(value: str | None) -> str:
-    """Clean text produced by PDF extraction."""
-    if not value:
-        return ""
-
-    value = value.replace("\x00", " ")
-    value = value.replace("\u00ad", "")
-
-    # Join words broken across lines, such as:
-    # "machine-\nlearning" -> "machinelearning"
-    value = re.sub(r"(\w)-\s+(\w)", r"\1\2", value)
-
-    # Normalise whitespace.
-    value = re.sub(r"\s+", " ", value)
-
-    return value.strip()
 
 
 def clean_metadata_text(value: str | None) -> str | None:

@@ -7,6 +7,7 @@ from typing import Any
 import httpx
 
 from ..config import settings
+from ..utils.text import clean_for_analysis as clean_pdf_text
 
 
 logger = logging.getLogger(__name__)
@@ -23,41 +24,6 @@ ANALYSIS_FIELDS = [
 ]
 
 MAX_LLM_CHARACTERS = 50_000
-
-
-def clean_pdf_text(value: str) -> str:
-    """Clean common PDF extraction artefacts while preserving useful content."""
-    if not value:
-        return ""
-
-    value = value.replace("\x00", " ")
-    value = value.replace("\u00ad", "")
-    value = value.replace("•", " ")
-    value = value.replace("▪", " ")
-    value = value.replace("■", " ")
-
-    # Join words broken across PDF line boundaries.
-    value = re.sub(r"(\w)-\s+(\w)", r"\1\2", value)
-
-    # Remove numeric citation markers such as [1], [1, 2], [24-26].
-    value = re.sub(
-        r"\[\s*\d+(?:\s*[,;–—-]?\s*\d+)*\s*\]",
-        " ",
-        value,
-    )
-
-    # Remove numeric parenthesised citations such as (12) or (12, 13).
-    value = re.sub(
-        r"\(\s*\d+(?:\s*[,;–—-]\s*\d+)*\s*\)",
-        " ",
-        value,
-    )
-
-    value = re.sub(r"\s+([,.;:!?])", r"\1", value)
-    value = re.sub(r"([,.;:!?])(?=[A-Za-z])", r"\1 ", value)
-    value = re.sub(r"\s+", " ", value)
-
-    return value.strip()
 
 
 def prepare_llm_document(text: str) -> str:

@@ -12,6 +12,20 @@ const API_URL = (
 ).replace(/\/$/, "");
 
 
+function getAuthToken(): string | null {
+  const stored = localStorage.getItem("researchiq-auth");
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored) as { token?: string };
+      return parsed.token || null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+
 export class ApiError extends Error {
   status: number;
 
@@ -90,12 +104,29 @@ async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {};
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const existingHeaders = options.headers;
+
+  if (existingHeaders instanceof Headers) {
+    existingHeaders.forEach((value, key) => {
+      headers[key] = value;
+    });
+  } else if (existingHeaders && typeof existingHeaders === "object") {
+    Object.assign(headers, existingHeaders);
+  }
+
   let response: Response;
 
   try {
     response = await fetch(
       `${API_URL}${path}`,
-      options,
+      { ...options, headers },
     );
   } catch {
     throw new ApiError(
@@ -268,3 +299,38 @@ export async function comparePapers(
 
 
 export { API_URL };
+
+
+export interface AuthResponse {
+  token: string;
+  username: string;
+}
+
+
+export async function loginUser(
+  email: string,
+  password: string,
+): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/api/auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+
+export async function registerUser(
+  email: string,
+  username: string,
+  password: string,
+): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/api/auth/register", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, username, password }),
+  });
+}

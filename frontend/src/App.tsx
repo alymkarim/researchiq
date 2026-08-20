@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import {
   analyseDocument,
   comparePapers,
@@ -7,6 +8,7 @@ import {
   searchPapers,
   uploadDocuments,
 } from "./api";
+import { useAuth } from "./context/AuthContext";
 
 import { AnalysisPanel } from "./components/AnalysisPanel";
 import { ComparisonPanel } from "./components/ComparisonPanel";
@@ -17,6 +19,8 @@ import { ResearchConsole } from "./components/ResearchConsole";
 import { SystemStatus } from "./components/SystemStatus";
 import { Toast } from "./components/Toast";
 import { UploadPanel } from "./components/UploadPanel";
+import { LoginPage } from "./pages/LoginPage";
+import { RegisterPage } from "./pages/RegisterPage";
 
 import type {
   Analysis,
@@ -37,6 +41,20 @@ interface ToastState {
 }
 
 export default function App() {
+  const { user } = useAuth();
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/" />} />
+        <Route path="/register" element={!user ? <RegisterPage /> : <Navigate to="/" />} />
+        <Route path="/*" element={user ? <AuthenticatedApp /> : <Navigate to="/login" />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+function AuthenticatedApp() {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);

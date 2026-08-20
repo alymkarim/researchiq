@@ -1,6 +1,7 @@
-import { RadioTower } from "lucide-react";
+import { LogOut, RadioTower } from "lucide-react";
 
 import type { WorkspaceTab } from "../App";
+import { useAuth } from "../context/AuthContext";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
@@ -23,6 +24,8 @@ export function Header({
   onNavigate,
   onPaperVaultClick,
 }: HeaderProps) {
+  const { user, logout } = useAuth();
+
   function goToTop() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -64,6 +67,22 @@ export function Header({
           <RadioTower size={14} />
           {online ? "Online" : "Offline"}
         </span>
+
+        {user && (
+          <>
+            <span className="header-username">
+              {user.username}
+            </span>
+            <button
+              type="button"
+              className="header-logout"
+              onClick={logout}
+              title="Sign out"
+            >
+              <LogOut size={16} />
+            </button>
+          </>
+        )}
       </div>
     </header>
   );

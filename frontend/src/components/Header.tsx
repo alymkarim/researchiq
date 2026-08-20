@@ -1,11 +1,7 @@
-import {
-  Atom,
-  FlaskConical,
-  Github,
-  RadioTower,
-} from "lucide-react";
+import { RadioTower } from "lucide-react";
 
 import type { WorkspaceTab } from "../App";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
   online: boolean;
@@ -14,6 +10,13 @@ interface HeaderProps {
   onPaperVaultClick: () => void;
 }
 
+const NAV_ITEMS: { label: string; tab: WorkspaceTab }[] = [
+  { label: "Overview", tab: "overview" },
+  { label: "Search", tab: "search" },
+  { label: "Analysis", tab: "analysis" },
+  { label: "Compare", tab: "comparison" },
+];
+
 export function Header({
   online,
   activeTab,
@@ -21,10 +24,7 @@ export function Header({
   onPaperVaultClick,
 }: HeaderProps) {
   function goToTop() {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   return (
@@ -35,72 +35,36 @@ export function Header({
         onClick={goToTop}
         aria-label="Back to the top"
       >
-        <span className="brand-mark">
-          <FlaskConical size={25} strokeWidth={2.6} />
-        </span>
-
-        <span>
-          <strong>ResearchIQ</strong>
-          <small>Experimental paper laboratory</small>
-        </span>
+        <span className="brand-name">ResearchIQ</span>
       </button>
 
-      <nav
-        className="header-nav"
-        aria-label="Primary navigation"
-      >
-        <button
-          type="button"
-          onClick={onPaperVaultClick}
-        >
+      <nav className="header-nav" aria-label="Primary navigation">
+        {NAV_ITEMS.map(({ label, tab }) => (
+          <button
+            key={tab}
+            type="button"
+            className={activeTab === tab ? "active" : ""}
+            onClick={() => onNavigate(tab)}
+          >
+            {label}
+          </button>
+        ))}
+
+        <button type="button" onClick={onPaperVaultClick}>
           Paper Vault
-        </button>
-
-        <button
-          type="button"
-          className={activeTab === "search" ? "active" : ""}
-          onClick={() => onNavigate("search")}
-        >
-          Research Console
-        </button>
-
-        <button
-          type="button"
-          className={
-            activeTab === "comparison" ? "active" : ""
-          }
-          onClick={() => onNavigate("comparison")}
-        >
-          Comparison Reactor
         </button>
       </nav>
 
       <div className="header-actions">
+        <ThemeToggle />
+
         <span
-          className={`status-chip ${
-            online ? "online" : "offline"
-          }`}
+          className={`status-chip ${online ? "online" : "offline"}`}
         >
           <RadioTower size={14} />
-
-          {online ? "System online" : "System offline"}
+          {online ? "Online" : "Offline"}
         </span>
-
-        <a
-          className="icon-button"
-          href="https://github.com/alymkarim/researchiq"
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Open ResearchIQ on GitHub"
-        >
-          <Github size={19} />
-        </a>
       </div>
-
-      <Atom
-        className="header-atom"
-        aria-hidden="true"
-      />
     </header>
   );
 }

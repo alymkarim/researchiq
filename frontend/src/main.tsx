@@ -5,6 +5,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import "./styles/tokens.css";
 import "./styles/light.css";
 import "./styles/base.css";
+import "./styles/components.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

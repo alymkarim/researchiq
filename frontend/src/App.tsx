@@ -136,6 +136,17 @@ export default function App() {
     });
   }
 
+  function scrollToResearchConsole() {
+  setActiveTab("search");
+
+  requestAnimationFrame(() => {
+    document.getElementById("console")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  });
+}
+
   function toggleDocument(id: number) {
     setSelectedIds((current) =>
       current.includes(id)

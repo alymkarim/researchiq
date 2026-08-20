@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from ..database import get_db
 from ..models import Document
-from ..schemas import ComparisonOut, ComparisonRequest
+from ..schemas import ComparisonOut, ComparisonPaper, ComparisonRequest
 
 router = APIRouter(
     prefix="/api/comparison",
@@ -29,39 +29,155 @@ def compare_documents(
             detail="At least two valid documents are required.",
         )
 
-    analyses = [
-        document.analysis
+    missing_analysis = [
+        document.title or document.filename
+        for document in documents
+        if document.analysis is None
+    ]
+
+    if missing_analysis:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Analyse all selected papers before comparing them. "
+                f"Missing analysis: {', '.join(missing_analysis)}"
+            ),
+        )
+
+    papers = [
+        ComparisonPaper(
+            document_id=document.id,
+            title=document.title or document.filename,
+            filename=document.filename,
+            summary=document.analysis.summary,
+            objective=document.analysis.objective,
+            methodology=document.analysis.methodology,
+            dataset=document.analysis.dataset,
+            findings=document.analysis.findings,
+            strengths=document.analysis.strengths,
+            limitations=document.analysis.limitations,
+            keywords=document.analysis.keywords,
+        )
+        for document in documents
+    ]
+
+    shared_keywords = find_shared_keywords(documents)
+    similarities = build_similarities(documents)
+    differences = build_differences(documents)
+
+    return ComparisonOut(
+        documents=documents,
+        papers=papers,
+        shared_keywords=shared_keywords,
+        similarities=similarities,
+        differences=differences,
+    )
+
+
+def parse_keywords(value: str | None) -> set[str]:
+    if not value:
+        return set()
+
+    return {
+        keyword.strip().lower()
+        for keyword in value.replace("\n", ",").split(",")
+        if keyword.strip()
+        and keyword.strip().lower() != "not clearly stated"
+    }
+
+
+def find_shared_keywords(documents: list[Document]) -> list[str]:
+    keyword_sets = [
+        parse_keywords(document.analysis.keywords)
         for document in documents
         if document.analysis is not None
     ]
 
-    if not analyses:
-        return ComparisonOut(documents=documents)
+    if not keyword_sets:
+        return []
 
-    return ComparisonOut(
-        documents=documents,
-        objective=_combine_field(analyses, "objective"),
-        methodology=_combine_field(analyses, "methodology"),
-        dataset=_combine_field(analyses, "dataset"),
-        findings=_combine_field(analyses, "findings"),
-        strengths=_combine_field(analyses, "strengths"),
-        limitations=_combine_field(analyses, "limitations"),
+    shared = set.intersection(*keyword_sets)
+
+    return sorted(keyword.title() for keyword in shared)
+
+
+def valid_text(value: str | None) -> bool:
+    return bool(
+        value
+        and value.strip()
+        and value.strip().lower() != "not clearly stated"
     )
 
 
-def _combine_field(analyses: list, field_name: str) -> str | None:
-    values: list[str] = []
+def build_similarities(documents: list[Document]) -> list[str]:
+    similarities: list[str] = []
 
-    for analysis in analyses:
-        value = getattr(analysis, field_name, None)
+    fields = {
+        "objective": "research objectives",
+        "methodology": "methodological approaches",
+        "dataset": "datasets or samples",
+        "findings": "main findings",
+    }
 
-        if value and value.strip():
-            values.append(value.strip())
+    for field_name, label in fields.items():
+        available_values = [
+            getattr(document.analysis, field_name, None)
+            for document in documents
+            if document.analysis is not None
+        ]
 
-    if not values:
-        return None
+        valid_values = [
+            value for value in available_values if valid_text(value)
+        ]
 
-    return "\n\n".join(
-        f"Paper {index}: {value}"
-        for index, value in enumerate(values, start=1)
-    )
+        if len(valid_values) == len(documents):
+            similarities.append(
+                f"All selected papers provide information about their {label}."
+            )
+
+    shared_keywords = find_shared_keywords(documents)
+
+    if shared_keywords:
+        similarities.append(
+            "The papers share keywords including "
+            + ", ".join(shared_keywords[:6])
+            + "."
+        )
+
+    return similarities
+
+
+def build_differences(documents: list[Document]) -> list[str]:
+    differences: list[str] = []
+
+    fields = {
+        "objective": "objective",
+        "methodology": "methodology",
+        "dataset": "dataset or sample",
+        "findings": "findings",
+    }
+
+    for field_name, label in fields.items():
+        values = []
+
+        for document in documents:
+            analysis = document.analysis
+            value = getattr(analysis, field_name, None)
+
+            if valid_text(value):
+                values.append(
+                    f"{document.title or document.filename}: {value}"
+                )
+
+        unique_values = {
+            value.split(": ", 1)[-1].strip().lower()
+            for value in values
+        }
+
+        if len(unique_values) > 1:
+            differences.append(
+                f"The papers differ in their {label}: "
+                + " | ".join(values)
+            )
+
+    return differences

@@ -115,8 +115,8 @@ export function ResearchConsole({
                     {result.page ? ` · Page ${result.page}` : ""}
                   </span>
                   <p>
-                    {result.text ||
-                      result.snippet ||
+                    {result.text ??
+                      result.snippet ??
                       "Relevant passage returned without preview text."}
                   </p>
                 </div>

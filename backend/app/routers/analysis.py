@@ -15,16 +15,21 @@ async def analyse_saved_document(
     document_id: int,
     db: Session = Depends(get_db),
 ) -> Analysis:
-    document = db.query(Document).filter(Document.id == document_id).first()
+    document = (
+        db.query(Document)
+        .filter(Document.id == document_id)
+        .first()
+    )
 
     if document is None:
-        raise HTTPException(status_code=404, detail="Document not found.")
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found.",
+        )
 
-    document_text = getattr(document, "extracted_text", None)
-    if document_text is None:
-        document_text = getattr(document, "text", None)
+    document_text = document.full_text
 
-    if not document_text:
+    if not document_text or not document_text.strip():
         raise HTTPException(
             status_code=422,
             detail="The document does not contain extractable text.",

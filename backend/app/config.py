@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     llm_api_key: str | None = None
     llm_base_url: str = "https://api.openai.com/v1"
     llm_model: str = "gpt-4.1-mini"
+    jwt_secret: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",

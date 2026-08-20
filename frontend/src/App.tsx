@@ -12,6 +12,7 @@ import { useAuth } from "./context/AuthContext";
 
 import { AnalysisPanel } from "./components/AnalysisPanel";
 import { ComparisonPanel } from "./components/ComparisonPanel";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Header } from "./components/Header";
 import { Hero } from "./components/Hero";
 import { PaperVault } from "./components/PaperVault";
@@ -347,6 +348,7 @@ function AuthenticatedApp() {
         onPaperVaultClick={scrollToPaperVault}
       />
 
+      <ErrorBoundary>
       <main className="app-main">
         <Hero
           documentCount={documents.length}
@@ -530,6 +532,7 @@ function AuthenticatedApp() {
           </section>
         </section>
       </main>
+      </ErrorBoundary>
 
       <footer>
         <span>

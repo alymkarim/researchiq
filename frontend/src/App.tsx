@@ -9,6 +9,7 @@ import {
   uploadDocuments,
 } from "./api";
 import { useAuth } from "./context/AuthContext";
+import { BarChart3, MessageSquare, MessageSquarePlus } from "lucide-react";
 
 import { AnalysisPanel } from "./components/AnalysisPanel";
 import { BatchActions } from "./components/BatchActions";
@@ -556,9 +557,17 @@ function AuthenticatedApp() {
 
               {activeTab === "chat" && !activeDocument && (
                 <div className="analysis-panel empty">
-                  <div className="empty-state">
+                  <div className="feature-locked">
+                    <div className="feature-locked-icon">
+                      <MessageSquare size={40} />
+                    </div>
                     <h3>Select a paper to chat with</h3>
-                    <p>Choose a paper from the vault first.</p>
+                    <p>Choose a paper from the vault and analyse it first.</p>
+                    <div className="feature-locked-steps">
+                      <span>1. Select a paper from the vault</span>
+                      <span>2. Click <strong>Analyse</strong></span>
+                      <span>3. Then chat will be available</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -571,9 +580,17 @@ function AuthenticatedApp() {
 
               {activeTab === "visualizations" && !activeDocument && (
                 <div className="analysis-panel empty">
-                  <div className="empty-state">
+                  <div className="feature-locked">
+                    <div className="feature-locked-icon">
+                      <BarChart3 size={40} />
+                    </div>
                     <h3>Select a paper to visualize</h3>
-                    <p>Choose a paper from the vault first.</p>
+                    <p>Choose a paper from the vault and analyse it first.</p>
+                    <div className="feature-locked-steps">
+                      <span>1. Select a paper from the vault</span>
+                      <span>2. Click <strong>Analyse</strong></span>
+                      <span>3. Then visualizations will be available</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -584,7 +601,10 @@ function AuthenticatedApp() {
 
               {activeTab === "collaboration" && !activeDocument && (
                 <div className="analysis-panel empty">
-                  <div className="empty-state">
+                  <div className="feature-locked">
+                    <div className="feature-locked-icon">
+                      <MessageSquarePlus size={40} />
+                    </div>
                     <h3>Select a paper for notes</h3>
                     <p>Choose a paper from the vault first.</p>
                   </div>

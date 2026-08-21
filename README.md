@@ -1,4 +1,4 @@
-﻿<div align="center">
+<div align="center">
 
 # ResearchIQ
 
@@ -86,7 +86,7 @@ You can search across your whole collection, compare papers side by side, and op
 
 ## How it works
 
-`
+```
 ┌─────────────────────────────────────────────────────┐
 │                   FRONTEND                          │
 │             React + TypeScript + Vite               │
@@ -112,7 +112,7 @@ You can search across your whole collection, compare papers side by side, and op
     │ (Supabase)  │    │  OpenAI, Groq,   │
     │             │    │  Ollama, etc     │
     └─────────────┘    └──────────────────┘
-`
+```
 
 ---
 
@@ -125,7 +125,7 @@ You can search across your whole collection, compare papers side by side, and op
 
 ### Backend
 
-`ash
+```bash
 cd backend
 python -m venv .venv
 source .venv/bin/activate    # macOS/Linux
@@ -133,19 +133,19 @@ source .venv/bin/activate    # macOS/Linux
 pip install -r requirements.txt
 cp .env.example .env
 uvicorn app.main:app --reload
-`
+```
 
 API runs at http://localhost:8000
 Docs at http://localhost:8000/docs
 
 ### Frontend
 
-`ash
+```bash
 cd frontend
 npm install
 cp .env.example .env
 npm run dev
-`
+```
 
 App runs at http://localhost:5173
 
@@ -155,22 +155,22 @@ App runs at http://localhost:5173
 
 ### Backend
 
-`
+```
 DATABASE_URL=sqlite:///./researchiq.db
 JWT_SECRET=your-random-secret
 FRONTEND_ORIGIN=http://localhost:5173
 LLM_API_KEY=your-api-key
 LLM_BASE_URL=https://api.groq.com/openai/v1
 LLM_MODEL=openai/gpt-oss-20b
-`
+```
 
 Only DATABASE_URL and JWT_SECRET are required. The LLM settings are optional.
 
 ### Frontend
 
-`
+```
 VITE_API_URL=http://localhost:8000
-`
+```
 
 ---
 
@@ -227,10 +227,10 @@ To enable AI analysis, set the LLM environment variables. Any OpenAI compatible 
 
 ## Testing
 
-`ash
+```bash
 cd backend
 pytest -v
-`
+```
 
 ---
 
@@ -270,3 +270,4 @@ MIT
 * [Scikit-learn](https://scikit-learn.org/)
 * [FAISS](https://faiss.ai/)
 * [Lucide](https://lucide.dev/)
+

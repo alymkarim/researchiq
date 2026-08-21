@@ -7,7 +7,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from .config import settings
-from .database import get_db
+from .database import Base, get_db, engine
 from .limiter import limiter
 from .routers import analysis, auth, batch, chat, citations, collaboration, comparison, documents, discovery, export, highlights, llm, recommendations, search, summary, visualizations
 
@@ -25,6 +25,11 @@ app = FastAPI(
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+@app.on_event("startup")
+def startup():
+    Base.metadata.create_all(bind=engine)
 
 
 @app.exception_handler(Exception)

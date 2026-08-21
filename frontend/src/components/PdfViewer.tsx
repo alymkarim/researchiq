@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import type { PDFDocumentProxy, PDFPageProxy } from "pdfjs-dist";
+import { API_URL } from "../api";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -72,7 +73,7 @@ export function PdfViewer({ documentId, title, onClose }: PdfViewerProps) {
           headers["Authorization"] = `Bearer ${token}`;
         }
 
-        const response = await fetch(`/api/documents/${documentId}/pdf`, { headers });
+        const response = await fetch(`${API_URL}/api/documents/${documentId}/pdf`, { headers });
         if (!response.ok) {
           throw new Error(`Failed to load PDF: ${response.statusText}`);
         }

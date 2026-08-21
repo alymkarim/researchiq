@@ -1,265 +1,272 @@
+﻿<div align="center">
+
 # ResearchIQ
 
-ResearchIQ is a full-stack research paper analysis platform that helps users upload, analyse, search and compare scientific papers through an intuitive web interface.
+### AI-Powered Research Paper Analysis Platform
 
-Built with React, FastAPI and PostgreSQL, the platform combines PDF processing, natural language processing and AI-assisted analysis to make exploring academic literature faster and more interactive.
+![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.139-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+
+Upload, analyse, search and compare scientific papers using AI.
+
+[Live Demo](https://researchiq-omega.vercel.app) · [API Docs](https://researchiq.onrender.com/docs) · [Report Bug](https://github.com/alymkarim/researchiq/issues)
+
+</div>
+
+---
+
+## What is this?
+
+ResearchIQ lets you upload research papers (PDFs) and get structured analysis back in seconds. It extracts the key parts like objectives, methodology, findings, strengths and limitations so you don't have to read through 20+ pages yourself.
+
+You can search across your whole collection, compare papers side by side, and optionally connect an LLM for deeper AI analysis.
+
+## Why use it?
+
+* Saves time when reviewing multiple papers
+* Works without an API key (heuristic analysis is built in)
+* Search across all your uploaded papers at once
+* Compare papers on methodology, findings and conclusions
+* Export analysis as PDF or DOCX
+* Your papers stay on your infrastructure
+
+---
 
 ## Features
 
-- Upload one or multiple PDF research papers
-- Automatic extraction of paper metadata
-- AI-assisted paper diagnostics
-- Executive summaries
-- Methodology, dataset and findings extraction
-- Strengths and limitations analysis
-- Keyword extraction
-- Full-text TF-IDF semantic search
-- Page-aware search results
-- Cross-paper comparison
-- User authentication (JWT)
-- Citation extraction
-- Paper recommendations
-- Rate limiting on auth and upload endpoints
-- REST API with automatic OpenAPI documentation
-- Health monitoring endpoint
-- Production deployment
+### Core
 
-## Demo
+* Upload single or multiple PDF research papers
+* Automatic metadata extraction (title, authors, abstract)
+* AI or heuristic paper analysis (summary, methodology, findings, strengths, limitations, keywords)
+* Full text search with page aware results
+* Side by side paper comparison
+* Citation export (BibTeX, APA, MLA)
+* Paper recommendations based on similarity
+* In app PDF viewer with navigation and zoom
+* User authentication with JWT
 
-**Live Application**
+### New in the platform overhaul
 
-https://researchiq-omega.vercel.app
-
-**Backend API**
-
-https://your-render-backend.onrender.com/docs
-
-## Screenshots
-
-> Add screenshots or GIFs here.
-
-### Upload papers
-
-![Upload](docs/images/upload.png)
-
-### Paper analysis
-
-![Analysis](docs/images/analysis.png)
-
-### Search
-
-![Search](docs/images/search.png)
-
-### Comparison
-
-![Comparison](docs/images/comparison.png)
+* Chat with papers (conversational Q&A using RAG)
+* Search external papers from Semantic Scholar and arXiv
+* Visualizations: word clouds, keyword networks, methodology timelines
+* Notes and annotations on papers
+* Export analysis as PDF or DOCX
+* Batch analyse multiple papers at once
+* Quick, standard or deep analysis levels
+* Multi model LLM support (OpenAI, Groq, Anthropic, Google, Ollama)
+* FAISS based vector search with OpenAI embeddings
+* Map analysis results back to specific PDF pages
 
 ---
 
-# Tech Stack
+## Live demo
 
-### Frontend
+**Frontend:** [https://researchiq-omega.vercel.app](https://researchiq-omega.vercel.app)
 
-- React
-- TypeScript
-- Vite
-- CSS
+**Backend API:** [https://researchiq.onrender.com/docs](https://researchiq.onrender.com/docs)
+
+---
+
+## Tech stack
+
+**Frontend:** React 18, TypeScript, Vite, React Router, Lucide Icons, PDF.js
+
+**Backend:** FastAPI, SQLAlchemy, Pydantic, PyMuPDF, Scikit-learn, FAISS, SlowAPI, OpenAI SDK, ReportLab, python-docx
+
+**Database:** SQLite (local), PostgreSQL via Supabase (production)
+
+**Deployment:** Vercel (frontend), Render (backend), Supabase (database)
+
+---
+
+## How it works
+
+`
+┌─────────────────────────────────────────────────────┐
+│                   FRONTEND                          │
+│             React + TypeScript + Vite               │
+│                                                     │
+│  Upload · Analysis · Search · Compare · Chat        │
+│  Export · Visualize · Notes · Discovery · Batch     │
+└───────────────────────┬─────────────────────────────┘
+                        │ REST API
+                        ▼
+┌─────────────────────────────────────────────────────┐
+│                    BACKEND                          │
+│                FastAPI + Python                     │
+│                                                     │
+│  PDF Processing (PyMuPDF)                           │
+│  TF-IDF Search + Analysis (Scikit-learn)            │
+│  Vector Search (FAISS)                              │
+│  LLM Integration (OpenAI SDK)                       │
+└──────────┬──────────────────────┬───────────────────┘
+           │                      │
+           ▼                      ▼
+    ┌─────────────┐    ┌──────────────────┐
+    │ PostgreSQL  │    │  LLM Providers   │
+    │ (Supabase)  │    │  OpenAI, Groq,   │
+    │             │    │  Ollama, etc     │
+    └─────────────┘    └──────────────────┘
+`
+
+---
+
+## Getting started
+
+### What you need
+
+* Python 3.11 or newer
+* Node.js 18 or newer
 
 ### Backend
 
-- FastAPI
-- SQLAlchemy
-- Pydantic
-- PyMuPDF
-- Scikit-learn
-- SlowAPI (rate limiting)
-
-### Database
-
-- SQLite (local development)
-- PostgreSQL (Supabase production)
-
-### Deployment
-
-- Vercel
-- Render
-- Supabase
-
----
-
-# Architecture
-
-```
-                React + TypeScript
-                        │
-                        ▼
-                 FastAPI REST API
-                        │
-        ┌───────────────┴───────────────┐
-        ▼                               ▼
- PostgreSQL                    PDF Processing
- (Supabase)                     (PyMuPDF)
-                                        │
-                                        ▼
-                          TF-IDF Search + Analysis
-```
-
----
-
-# Project Structure
-
-```
-researchiq/
-│
-├── backend/
-│   ├── app/
-│   ├── tests/
-│   └── requirements.txt
-│
-├── frontend/
-│   ├── src/
-│   └── package.json
-│
-└── README.md
-```
-
----
-
-# Running Locally
-
-## Backend
-
-```bash
+`ash
 cd backend
-
 python -m venv .venv
-
-# Windows
-.venv\Scripts\activate
-
+source .venv/bin/activate    # macOS/Linux
+.venv\Scripts\activate       # Windows
 pip install -r requirements.txt
-
-copy .env.example .env
-
+cp .env.example .env
 uvicorn app.main:app --reload
-```
+`
 
-Backend runs at
+API runs at http://localhost:8000
+Docs at http://localhost:8000/docs
 
-```
-http://localhost:8000
-```
+### Frontend
 
-Swagger documentation
-
-```
-http://localhost:8000/docs
-```
-
----
-
-## Frontend
-
-```bash
+`ash
 cd frontend
-
 npm install
-
-copy .env.example .env
-
+cp .env.example .env
 npm run dev
-```
+`
 
-Frontend runs at
-
-```
-http://localhost:5173
-```
+App runs at http://localhost:5173
 
 ---
 
-# Environment Variables
+## Environment variables
 
-Backend
+### Backend
 
-```env
-DATABASE_URL=
-
-LLM_API_KEY=
-
-LLM_BASE_URL=
-
-LLM_MODEL=
-
-JWT_SECRET=
-
+`
+DATABASE_URL=sqlite:///./researchiq.db
+JWT_SECRET=your-random-secret
 FRONTEND_ORIGIN=http://localhost:5173
-```
+LLM_API_KEY=your-api-key
+LLM_BASE_URL=https://api.groq.com/openai/v1
+LLM_MODEL=openai/gpt-oss-20b
+`
 
-Frontend
+Only DATABASE_URL and JWT_SECRET are required. The LLM settings are optional.
 
-```env
+### Frontend
+
+`
 VITE_API_URL=http://localhost:8000
-```
+`
 
 ---
 
-# AI Analysis
+## LLM setup
 
-ResearchIQ works even without an LLM.
+ResearchIQ works without an LLM. If no API key is set, it uses a built in heuristic engine that pattern matches common phrases in academic papers.
 
-When no LLM credentials are supplied, the application automatically falls back to a lightweight heuristic analysis engine that extracts:
+To enable AI analysis, set the LLM environment variables. Any OpenAI compatible API works.
 
-- Objective
-- Methodology
-- Dataset
-- Findings
-- Strengths
-- Limitations
-- Keywords
+### Supported providers
 
-When an OpenAI-compatible endpoint is configured, ResearchIQ performs richer AI-assisted analysis while keeping the same API.
-
----
-
-# API Endpoints
-
-| Method | Endpoint | Description |
-|---------|----------|-------------|
-| GET | `/api/documents` | List uploaded papers |
-| POST | `/api/documents/upload` | Upload PDF papers |
-| DELETE | `/api/documents/{id}` | Delete a paper |
-| POST | `/api/analysis/{id}` | Analyse a paper |
-| POST | `/api/search` | Search uploaded papers |
-| POST | `/api/comparison` | Compare selected papers |
-| POST | `/api/auth/register` | Register a new user |
-| POST | `/api/auth/login` | Login and get JWT token |
-| GET | `/api/health` | Health check |
+| Provider | Base URL | Free? |
+|----------|----------|-------|
+| OpenAI | https://api.openai.com/v1 | No |
+| Groq | https://api.groq.com/openai/v1 | Yes |
+| Ollama | http://localhost:11434/v1 | Yes (local) |
+| Anthropic | https://api.anthropic.com/v1 | No |
 
 ---
 
-# Testing
+## API endpoints
 
-Run all backend tests
+| Method | Endpoint | What it does |
+|--------|----------|--------------|
+| GET | /api/documents | List uploaded papers |
+| POST | /api/documents/upload | Upload PDF papers |
+| DELETE | /api/documents/{id} | Delete a paper |
+| POST | /api/analysis/{id} | Analyse a paper |
+| POST | /api/search | Search papers |
+| POST | /api/comparison | Compare papers |
+| POST | /api/auth/register | Register |
+| POST | /api/auth/login | Login |
+| POST | /api/chat | Chat with a paper |
+| GET | /api/export/analysis/{id}/pdf | Export as PDF |
+| GET | /api/export/analysis/{id}/docx | Export as DOCX |
+| GET | /api/discovery/search | Search external papers |
+| POST | /api/batch/analyse | Batch analyse |
+| GET | /api/summary/{id} | Multi level summary |
+| GET | /api/visualizations/wordcloud/{id} | Word cloud |
+| GET | /api/visualizations/keyword-network/{id} | Keyword network |
+| GET | /api/visualizations/methodology-timeline/{id} | Method timeline |
+| GET | /api/visualizations/citation-graph | Citation graph |
+| GET | /api/highlights/{id} | Page highlights |
+| POST | /api/collaboration/notes | Create note |
+| GET | /api/collaboration/notes/{id} | Get notes |
+| POST | /api/collaboration/annotations | Create annotation |
+| GET | /api/collaboration/annotations/{id} | Get annotations |
+| GET | /api/llm/providers | List LLM providers |
+| GET | /api/recommendations/{id} | Paper recommendations |
+| GET | /api/citations/{id} | Export citation |
+| GET | /api/health | Health check |
 
-```bash
+---
+
+## Testing
+
+`ash
 cd backend
-
 pytest -v
-```
+`
 
 ---
 
-# Future Improvements
+## What's next
 
-- Vector embedding search
-- OCR support for scanned PDFs
-- Citation graph visualisation
-- Research collections
-- Export reports
+* OCR support for scanned PDFs
+* Real time collaboration
+* Paper collections and folders
+* Interactive citation graph
+* Custom analysis templates
+* Multi language support
+* Browser extension for importing papers
+* Mobile design improvements
 
 ---
 
-# License
+## Contributing
 
-MIT License
+1. Fork the repo
+2. Create a branch (git checkout -b feature/my-feature)
+3. Make your changes
+4. Push and open a PR
+
+---
+
+## License
+
+MIT
+
+---
+
+## Built with
+
+* [FastAPI](https://fastapi.tiangolo.com/)
+* [React](https://react.dev/)
+* [PyMuPDF](https://pymupdf.readthedocs.io/)
+* [Scikit-learn](https://scikit-learn.org/)
+* [FAISS](https://faiss.ai/)
+* [Lucide](https://lucide.dev/)

@@ -357,6 +357,13 @@ async def upload_documents(
 
     try:
         for file in files:
+            original_filename = Path(file.filename or "paper.pdf").name
+            
+            # Check for duplicate filename
+            existing = db.query(Document).filter(Document.filename == original_filename).first()
+            if existing:
+                continue
+            
             saved_path, original_filename, _ = await save_uploaded_pdf(file)
             saved_paths.append(saved_path)
 

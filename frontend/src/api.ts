@@ -363,3 +363,170 @@ export async function getCitation(
     `/api/citations/${documentId}?format=${format}`,
   );
 }
+
+
+export async function chatWithDocument(
+  question: string,
+  documentId: number,
+  history?: Array<{ role: string; content: string }>,
+): Promise<{ answer: string; sources: Array<Record<string, unknown>> }> {
+  return apiFetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question, document_id: documentId, history }),
+  });
+}
+
+
+export async function chatMultiDocument(
+  question: string,
+  documentIds: number[],
+  history?: Array<{ role: string; content: string }>,
+): Promise<{ answer: string; sources: Array<Record<string, unknown>> }> {
+  return apiFetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question, document_ids: documentIds, history }),
+  });
+}
+
+
+export function getExportUrl(documentId: number, format: "pdf" | "docx"): string {
+  const token = getAuthToken();
+  return `${API_URL}/api/export/analysis/${documentId}/${format}${token ? `?token=${token}` : ""}`;
+}
+
+
+export async function discoverPapers(
+  query: string,
+  sources = "semantic_scholar,arxiv",
+  limit = 10,
+): Promise<{ papers: Array<Record<string, unknown>>; total: number }> {
+  return apiFetch(
+    `/api/discovery/search?q=${encodeURIComponent(query)}&sources=${sources}&limit=${limit}`,
+  );
+}
+
+
+export async function batchAnalyse(
+  documentIds: number[],
+): Promise<{ results: Array<Record<string, unknown>>; total: number; successful: number; failed: number }> {
+  return apiFetch("/api/batch/analyse", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ document_ids: documentIds }),
+  });
+}
+
+
+export async function getSummary(
+  documentId: number,
+  level: "quick" | "standard" | "deep" = "standard",
+): Promise<{ level: string; analysis: Record<string, unknown> | null; error?: string }> {
+  return apiFetch(`/api/summary/${documentId}?level=${level}`);
+}
+
+
+export async function getWordCloud(
+  documentId: number,
+): Promise<Array<{ text: string; value: number; size: number }>> {
+  return apiFetch(`/api/visualizations/wordcloud/${documentId}`);
+}
+
+
+export async function getKeywordNetwork(
+  documentId: number,
+): Promise<{ nodes: Array<Record<string, unknown>>; edges: Array<Record<string, unknown>> }> {
+  return apiFetch(`/api/visualizations/keyword-network/${documentId}`);
+}
+
+
+export async function getMethodologyTimeline(
+  documentId: number,
+): Promise<Array<{ step: number; description: string }>> {
+  return apiFetch(`/api/visualizations/methodology-timeline/${documentId}`);
+}
+
+
+export async function getCitationGraph(): Promise<{
+  nodes: Array<Record<string, unknown>>;
+  edges: Array<Record<string, unknown>>;
+}> {
+  return apiFetch("/api/visualizations/citation-graph");
+}
+
+
+export async function getHighlights(
+  documentId: number,
+): Promise<{
+  document_id: number;
+  page_highlights: Record<number, Array<Record<string, unknown>>>;
+  references: Array<Record<string, unknown>>;
+}> {
+  return apiFetch(`/api/highlights/${documentId}`);
+}
+
+
+export async function createNote(
+  documentId: number,
+  content: string,
+  pageNumber?: number,
+): Promise<Record<string, unknown>> {
+  return apiFetch("/api/collaboration/notes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ document_id: documentId, content, page_number: pageNumber }),
+  });
+}
+
+
+export async function getNotes(
+  documentId: number,
+): Promise<Array<Record<string, unknown>>> {
+  return apiFetch(`/api/collaboration/notes/${documentId}`);
+}
+
+
+export async function deleteNote(noteId: number): Promise<void> {
+  await apiFetch(`/api/collaboration/notes/${noteId}`, { method: "DELETE" });
+}
+
+
+export async function createAnnotation(
+  documentId: number,
+  pageNumber: number,
+  highlightText: string,
+  comment?: string,
+  color?: string,
+): Promise<Record<string, unknown>> {
+  return apiFetch("/api/collaboration/annotations", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      document_id: documentId,
+      page_number: pageNumber,
+      highlight_text: highlightText,
+      comment,
+      color,
+    }),
+  });
+}
+
+
+export async function getAnnotations(
+  documentId: number,
+): Promise<Array<Record<string, unknown>>> {
+  return apiFetch(`/api/collaboration/annotations/${documentId}`);
+}
+
+
+export async function deleteAnnotation(annotationId: number): Promise<void> {
+  await apiFetch(`/api/collaboration/annotations/${annotationId}`, { method: "DELETE" });
+}
+
+
+export async function getLLMProviders(): Promise<{
+  providers: Array<{ name: string; base_url: string; models: string[] }>;
+}> {
+  return apiFetch("/api/llm/providers");
+}

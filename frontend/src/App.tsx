@@ -11,16 +11,23 @@ import {
 import { useAuth } from "./context/AuthContext";
 
 import { AnalysisPanel } from "./components/AnalysisPanel";
+import { BatchActions } from "./components/BatchActions";
+import { ChatPanel } from "./components/ChatPanel";
+import { CollaborationPanel } from "./components/CollaborationPanel";
 import { ComparisonPanel } from "./components/ComparisonPanel";
+import { DiscoveryPanel } from "./components/DiscoveryPanel";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { ExportButtons } from "./components/ExportButtons";
 import { Header } from "./components/Header";
 import { Hero } from "./components/Hero";
 import { PaperVault } from "./components/PaperVault";
 import { PdfViewer } from "./components/PdfViewer";
 import { ResearchConsole } from "./components/ResearchConsole";
+import { SummaryLevelSelector } from "./components/SummaryLevelSelector";
 import { SystemStatus } from "./components/SystemStatus";
 import { Toast } from "./components/Toast";
 import { UploadPanel } from "./components/UploadPanel";
+import { VisualizationsPanel } from "./components/VisualizationsPanel";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 
@@ -35,7 +42,11 @@ export type WorkspaceTab =
   | "overview"
   | "search"
   | "analysis"
-  | "comparison";
+  | "comparison"
+  | "chat"
+  | "discovery"
+  | "visualizations"
+  | "collaboration";
 
 interface ToastState {
   message: string;
@@ -394,6 +405,11 @@ function AuthenticatedApp() {
                 onDelete={handleDelete}
                 onView={handleViewPdf}
               />
+
+              <BatchActions
+                selectedIds={selectedIds}
+                onComplete={loadDocuments}
+              />
             </div>
           </aside>
 
@@ -407,10 +423,11 @@ function AuthenticatedApp() {
                   ["overview", "Overview"],
                   ["search", "Search"],
                   ["analysis", "Analysis"],
-                  [
-                    "comparison",
-                    `Compare (${selectedIds.length})`,
-                  ],
+                  ["comparison", `Compare (${selectedIds.length})`],
+                  ["chat", "Chat"],
+                  ["discovery", "Discover"],
+                  ["visualizations", "Visualize"],
+                  ["collaboration", "Notes"],
                 ] as const
               ).map(([tab, label]) => (
                 <button
@@ -527,6 +544,51 @@ function AuthenticatedApp() {
                   result={comparison}
                   onCompare={handleCompare}
                 />
+              )}
+
+              {activeTab === "chat" && activeDocument && (
+                <ChatPanel
+                  documentId={activeDocument.id}
+                  documentTitle={activeDocument.title || activeDocument.filename}
+                  hasAnalysis={!!activeDocument.analysis}
+                />
+              )}
+
+              {activeTab === "chat" && !activeDocument && (
+                <div className="analysis-panel empty">
+                  <div className="empty-state">
+                    <h3>Select a paper to chat with</h3>
+                    <p>Choose a paper from the vault first.</p>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "discovery" && <DiscoveryPanel />}
+
+              {activeTab === "visualizations" && activeDocument && (
+                <VisualizationsPanel documentId={activeDocument.id} hasAnalysis={!!activeDocument.analysis} />
+              )}
+
+              {activeTab === "visualizations" && !activeDocument && (
+                <div className="analysis-panel empty">
+                  <div className="empty-state">
+                    <h3>Select a paper to visualize</h3>
+                    <p>Choose a paper from the vault first.</p>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "collaboration" && activeDocument && (
+                <CollaborationPanel documentId={activeDocument.id} />
+              )}
+
+              {activeTab === "collaboration" && !activeDocument && (
+                <div className="analysis-panel empty">
+                  <div className="empty-state">
+                    <h3>Select a paper for notes</h3>
+                    <p>Choose a paper from the vault first.</p>
+                  </div>
+                </div>
               )}
             </div>
           </section>

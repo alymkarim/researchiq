@@ -57,19 +57,28 @@ export function PdfViewer({ documentId, title, onClose }: PdfViewerProps) {
         setLoading(true);
         setError(null);
 
-        const token = localStorage.getItem("researchiq-auth");
-        let url = `/api/documents/${documentId}/pdf`;
-
-        if (token) {
-          const parsed = JSON.parse(token) as { token?: string };
-          if (parsed.token) {
-            const response = await fetch(url);
-            const blob = await response.blob();
-            url = URL.createObjectURL(blob);
+        const stored = localStorage.getItem("researchiq-auth");
+        let token: string | null = null;
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored) as { token?: string };
+            token = parsed.token || null;
+          } catch {
+            /* ignore */
           }
         }
+        const headers: Record<string, string> = {};
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
 
-        const loadingTask = pdfjsLib.getDocument({ url });
+        const response = await fetch(`/api/documents/${documentId}/pdf`, { headers });
+        if (!response.ok) {
+          throw new Error(`Failed to load PDF: ${response.statusText}`);
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
         const pdfDoc = await loadingTask.promise;
 
         if (!cancelled) {

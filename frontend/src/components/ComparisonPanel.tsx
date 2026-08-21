@@ -86,19 +86,26 @@ export function ComparisonPanel({
     selectedIds.includes(document.id),
   );
 
+  const internalKeys = new Set(["keywords", "documents", "papers", "shared_keywords", "similarities"]);
+
   const visibleEntries = result
     ? Object.entries(result).filter(
-        ([, value]) => value != null && value !== "" && value !== false,
+        ([key, value]) =>
+          !internalKeys.has(key) &&
+          value != null &&
+          value !== "" &&
+          value !== false,
       )
     : [];
 
-  const keywords = result?.keywords
-    ? typeof result.keywords === "string"
-      ? result.keywords.split(",").map((k) => k.trim()).filter(Boolean)
-      : Array.isArray(result.keywords)
-        ? result.keywords.map(String)
-        : []
-    : [];
+  const keywords = (() => {
+    const source = result?.keywords ?? result?.shared_keywords;
+    if (!source) return [];
+    if (typeof source === "string")
+      return source.split(",").map((k) => k.trim()).filter(Boolean);
+    if (Array.isArray(source)) return source.map(String);
+    return [];
+  })();
 
   return (
     <section className="comparison-panel" id="comparison">
@@ -169,9 +176,7 @@ export function ComparisonPanel({
               </div>
             )}
 
-            {visibleEntries
-              .filter(([key]) => key !== "keywords" && key !== "documents")
-              .map(([key, value]) => (
+            {visibleEntries.map(([key, value]) => (
                 <div key={key} className="comparison-field">
                   <h4 className="comparison-field-title">
                     {key.replace(/_/g, " ")}

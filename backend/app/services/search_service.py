@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from typing import Any
 
@@ -6,6 +7,9 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from ..utils.text import clean_text
+from .vector_store import VectorIndex, get_or_build_index
+
+logger = logging.getLogger(__name__)
 
 
 def chunk_text(
@@ -77,11 +81,62 @@ def get_document_pages(document: Any) -> list[dict]:
     ]
 
 
-def search_documents(
-    documents,
-    query: str,
-    limit: int,
-) -> list[dict]:
+def _build_chunks_for_document(document: Any) -> list[dict]:
+    """Build chunk list with metadata for a document."""
+    chunks = []
+    chunk_index = 0
+
+    for page_data in get_document_pages(document):
+        page_number = page_data["page"]
+        for text in chunk_text(page_data["text"]):
+            chunks.append({
+                "text": text,
+                "page": page_number,
+                "chunk_index": chunk_index,
+            })
+            chunk_index += 1
+
+    return chunks
+
+
+def _vector_search(documents, query: str, limit: int) -> list[dict] | None:
+    """Try vector-based search. Returns None if embeddings unavailable."""
+    all_results = []
+
+    for document in documents:
+        chunks = _build_chunks_for_document(document)
+        if not chunks:
+            continue
+
+        index = get_or_build_index(document.id, chunks)
+        results = index.search(query, limit=limit)
+
+        for r in results:
+            r["document_title"] = document.title or document.filename
+            r["filename"] = document.filename
+
+        all_results.extend(results)
+
+    if not all_results:
+        return None
+
+    all_results.sort(key=lambda x: x["score"], reverse=True)
+
+    seen: set[tuple[int, int]] = set()
+    filtered = []
+    for r in all_results:
+        key = (r["document_id"], r["page"])
+        if key not in seen:
+            seen.add(key)
+            filtered.append(r)
+        if len(filtered) >= limit:
+            break
+
+    return filtered
+
+
+def _tfidf_search(documents, query: str, limit: int) -> list[dict]:
+    """Fallback TF-IDF search."""
     cleaned_query = clean_text(query)
 
     if not cleaned_query:
@@ -140,8 +195,6 @@ def search_documents(
 
         record = records[index]
 
-        # Allow results from multiple pages of the same document,
-        # but avoid duplicate chunks from the same page.
         unique_key = (
             record["document_id"],
             record["page"],
@@ -167,3 +220,16 @@ def search_documents(
             break
 
     return results
+
+
+def search_documents(
+    documents,
+    query: str,
+    limit: int,
+) -> list[dict]:
+    """Search using vector embeddings if available, otherwise TF-IDF."""
+    vector_results = _vector_search(documents, query, limit)
+    if vector_results is not None:
+        return vector_results
+
+    return _tfidf_search(documents, query, limit)

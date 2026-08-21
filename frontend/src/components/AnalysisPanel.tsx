@@ -12,7 +12,9 @@ import {
 } from "lucide-react";
 import type { Analysis, DocumentItem } from "../types";
 import { CitationExport } from "./CitationExport";
+import { ExportButtons } from "./ExportButtons";
 import { Recommendations } from "./Recommendations";
+import { SummaryLevelSelector } from "./SummaryLevelSelector";
 
 interface AnalysisPanelProps {
   document?: DocumentItem | null;
@@ -68,12 +70,18 @@ export function AnalysisPanel({ document, analysis, onSelectDocument }: Analysis
   if (!analysis) {
     return (
       <div className="analysis-panel empty">
-        <div className="empty-state">
-          <div className="empty-state-icon">
+        <div className="feature-locked">
+          <div className="feature-locked-icon">
             <BookOpen size={40} />
           </div>
           <h3>{document.title || document.filename}</h3>
-          <p>This paper has not been analysed yet. Click Analyse to begin.</p>
+          <p>This paper has not been analysed yet.</p>
+          <div className="feature-locked-steps">
+            <span>1. Click the <strong>Analyse</strong> button on this paper in the vault</span>
+            <span>2. Wait for the analysis to complete (may take 30-60 seconds with local LLM)</span>
+            <span>3. Analysis results will appear here</span>
+            <span>4. Chat, visualizations, and export will be enabled</span>
+          </div>
         </div>
       </div>
     );
@@ -96,8 +104,13 @@ export function AnalysisPanel({ document, analysis, onSelectDocument }: Analysis
         <h2 className="analysis-title">
           {document.title || document.filename}
         </h2>
-        <span className={`analysis-mode-badge ${modeClass}`}>{modeLabel}</span>
+        <div className="analysis-header-actions">
+          <span className={`analysis-mode-badge ${modeClass}`}>{modeLabel}</span>
+          <ExportButtons documentId={document.id} documentTitle={document.title || document.filename} />
+        </div>
       </header>
+
+      <SummaryLevelSelector documentId={document.id} />
 
       {analysis.summary && (
         <div className="analysis-summary-card">

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from .config import settings
 from .database import get_db
 from .limiter import limiter
-from .routers import analysis, auth, citations, comparison, documents, recommendations, search
+from .routers import analysis, auth, batch, chat, citations, collaboration, comparison, documents, discovery, export, highlights, llm, recommendations, search, summary, visualizations
 
 
 
@@ -29,6 +29,8 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 allowed_origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
 ]
 
 if settings.frontend_origin:
@@ -54,6 +56,15 @@ app.include_router(comparison.router)
 app.include_router(auth.router)
 app.include_router(citations.router)
 app.include_router(recommendations.router)
+app.include_router(chat.router)
+app.include_router(export.router)
+app.include_router(discovery.router)
+app.include_router(batch.router)
+app.include_router(collaboration.router)
+app.include_router(llm.router)
+app.include_router(summary.router)
+app.include_router(highlights.router)
+app.include_router(visualizations.router)
 
 
 @app.get("/")

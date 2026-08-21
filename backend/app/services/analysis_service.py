@@ -48,6 +48,14 @@ def clean_output(value: Any, maximum_length: int = 1_200) -> str:
     if value is None:
         return "Not clearly stated"
 
+    if isinstance(value, dict):
+        parts = []
+        for k, v in value.items():
+            parts.append(f"{k}: {clean_output(v, 200)}")
+        value = "; ".join(parts)
+    elif isinstance(value, list):
+        value = ", ".join(str(item) for item in value)
+
     cleaned = clean_pdf_text(str(value)).strip(" ,;:-")
 
     if not cleaned:
@@ -122,6 +130,15 @@ def extract_json_object(content: str) -> dict[str, Any]:
     if not isinstance(parsed, dict):
         raise ValueError("The LLM response was not a JSON object.")
 
+    # Recursively parse JSON strings within the object
+    for key, value in parsed.items():
+        if isinstance(value, str):
+            # Try to parse JSON strings
+            try:
+                parsed[key] = json.loads(value)
+            except (json.JSONDecodeError, TypeError):
+                pass
+
     return parsed
 
 
@@ -161,64 +178,44 @@ async def analyse_document(text: str, title: str) -> dict[str, str]:
 async def analyse_with_llm(text: str, title: str) -> dict[str, str]:
     document = prepare_llm_document(text)
 
-    prompt = f"""
-Analyse the scientific paper below.
+    prompt = f"""You are analyzing a scientific research paper. Your task is to extract key information and return it as JSON.
 
-Return valid JSON only, with exactly this structure:
+IMPORTANT: You MUST return a JSON object with EXACTLY these fields:
+- "summary": A 2-3 sentence summary of the paper
+- "objective": The main research goal or question
+- "methodology": The methods/approach used
+- "dataset": The data or samples used
+- "findings": The main results
+- "strengths": Array of 2-4 strengths
+- "limitations": Array of 2-4 limitations  
+- "keywords": Array of 5-10 keywords
 
-{{
-  "summary": "Concise executive summary",
-  "objective": "Main research objective or question",
-  "methodology": "Research design, methods, models, experiments or procedures",
-  "dataset": "Dataset, samples, participants or experimental material",
-  "findings": "Main results and conclusions",
-  "strengths": [
-    "Evidence-based strength"
-  ],
-  "limitations": [
-    "Evidence-based limitation"
-  ],
-  "keywords": [
-    "keyword"
-  ]
-}}
+DO NOT return raw data from the paper. Return ANALYSIS of the paper.
 
-Rules:
-1. Use only evidence contained in the supplied paper.
-2. Do not invent details.
-3. Use "Not clearly stated" when evidence is missing.
-4. Keep the summary below 180 words.
-5. Keep objective, methodology, dataset and findings concise.
-6. Return at most four strengths and four limitations.
-7. Do not treat vague future-work statements as current limitations.
-8. Do not copy references, page headers, footers or citation markers.
-9. Return five to ten useful keywords where possible.
-10. Return JSON only, without Markdown fences.
-
-Paper title:
-{title}
+Paper title: {title}
 
 Paper text:
 {document}
-""".strip()
+
+Return ONLY the JSON object, nothing else."""
 
     endpoint = f"{settings.llm_base_url.rstrip('/')}/chat/completions"
 
     payload = {
         "model": settings.llm_model,
         "temperature": 0.1,
-        "response_format": {"type": "json_object"},
         "messages": [
             {
                 "role": "system",
-                "content": (
-                    "You are a careful scientific literature analyst. "
-                    "Return concise, evidence-based structured JSON."
-                ),
+                "content": "You are a scientific paper analyst. Return JSON with summary, objective, methodology, dataset, findings, strengths, limitations, and keywords.",
             },
             {"role": "user", "content": prompt},
         ],
     }
+
+    # Only add response_format for OpenAI-compatible APIs (not Ollama)
+    if "ollama" not in settings.llm_base_url.lower():
+        payload["response_format"] = {"type": "json_object"}
 
     async with httpx.AsyncClient(timeout=120) as client:
         response = await client.post(
@@ -230,8 +227,8 @@ Paper text:
             json=payload,
         )
 
-        # Some OpenAI-compatible providers do not support response_format.
-        if response.status_code in {400, 422}:
+        # Some providers do not support response_format.
+        if response.status_code in {400, 422} and "response_format" in payload:
             payload.pop("response_format", None)
             response = await client.post(
                 endpoint,
@@ -246,7 +243,24 @@ Paper text:
 
     response_data = response.json()
     content = response_data["choices"][0]["message"]["content"]
+    
+    # Debug logging
+    print(f"LLM response content: {content[:500]}")
+    
     parsed = extract_json_object(content)
+    
+    # Debug logging
+    print(f"Parsed JSON: {parsed}")
+    
+    # Check if the response has the expected fields
+    expected_fields = ["summary", "objective", "methodology", "dataset", "findings"]
+    has_expected_fields = any(field in parsed for field in expected_fields)
+    
+    if not has_expected_fields:
+        print("LLM did not return expected fields, using heuristic fallback")
+        fallback = heuristic_analysis(text)
+        fallback["analysis_mode"] = "heuristic"
+        return fallback
 
     return normalise_analysis(parsed)
 

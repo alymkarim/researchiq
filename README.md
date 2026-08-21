@@ -20,6 +20,8 @@ Upload, analyse, search and compare scientific papers using AI.
 
 ## What is this?
 
+![ResearchIQ Demo](researchiq.gif)
+
 ResearchIQ lets you upload research papers (PDFs) and get structured analysis back in seconds. It extracts the key parts like objectives, methodology, findings, strengths and limitations so you don't have to read through 20+ pages yourself.
 
 You can search across your whole collection, compare papers side by side, and optionally connect an LLM for deeper AI analysis.

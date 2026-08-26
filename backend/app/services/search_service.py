@@ -11,7 +11,7 @@ from .vector_store import VectorIndex, get_or_build_index
 
 logger = logging.getLogger(__name__)
 
-
+# TODO: experiment with different chunk sizes, 1000 feels arbitrary
 def chunk_text(
     text: str,
     size: int = 1000,

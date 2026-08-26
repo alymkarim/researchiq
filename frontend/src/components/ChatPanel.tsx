@@ -9,6 +9,7 @@ interface ChatPanelProps {
   hasAnalysis?: boolean;
 }
 
+// TODO: add streaming responses instead of waiting for full response
 export function ChatPanel({ documentId, documentTitle, hasAnalysis = false }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");

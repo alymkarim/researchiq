@@ -13,6 +13,7 @@ from ..utils.text import clean_for_analysis as clean_pdf_text
 
 logger = logging.getLogger(__name__)
 
+# TODO: maybe move these to a config file?
 ANALYSIS_FIELDS = [
     "summary",
     "objective",

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 MAX_CONTEXT_CHUNKS = 5
 MAX_HISTORY_MESSAGES = 10
 
-
+# TODO: this is kinda hacky, should probably use embeddings for better retrieval
 def _get_relevant_context(document, question: str) -> str:
     """Get relevant chunks from the document for the question."""
     chunks = []

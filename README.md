@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
 
 # ResearchIQ
 
@@ -22,25 +22,21 @@ Upload, analyse, search and compare scientific papers using AI.
 
 ## What is this?
 
-![ResearchIQ Demo](researchiq.gif)
-
 ResearchIQ lets you upload research papers (PDFs) and get structured analysis back in seconds. It extracts the key parts like objectives, methodology, findings, strengths and limitations so you don't have to read through 20+ pages yourself.
 
 You can search across your whole collection, compare papers side by side, and optionally connect an LLM for deeper AI analysis.
 
-## Why I built this
+## The problem
 
-I was working on a literature review and got tired of reading through 30+ papers just to extract the same pieces of information from each one. ChatGPT works for one paper at a time but doesn't remember anything between sessions and can't search across your collection.
+Literature reviews are painful. Going through 30+ papers just to pull out the same info from each one takes hours. ChatGPT works for one paper at a time but doesn't remember anything between sessions and can't search across a collection.
 
-I wanted something where I could upload all my papers, get structured analysis instantly, and search across everything at once. Something that shows exactly where each finding comes from in the paper instead of giving generic answers.
-
-ResearchIQ is that tool. It works offline with built-in heuristic analysis, and when you connect an LLM it gives you richer insights while keeping everything grounded in the actual paper content.
+ResearchIQ solves this. Upload all your papers, get structured analysis instantly, and search across everything at once. Each finding is grounded in the actual paper content instead of generic AI responses.
 
 ## Why use it?
 
-* Saves time when reviewing multiple papers
+* Saves a ton of time when reviewing papers
 * Works without an API key (heuristic analysis is built in)
-* Search across all your uploaded papers at once
+* Search across all your papers at once
 * Compare papers on methodology, findings and conclusions
 * Export analysis as PDF or DOCX
 * Your papers stay on your infrastructure
@@ -61,7 +57,7 @@ ResearchIQ is that tool. It works offline with built-in heuristic analysis, and 
 * In app PDF viewer with navigation and zoom
 * User authentication with JWT
 
-### New in the platform overhaul
+### What got added later
 
 * Chat with papers (conversational Q&A using RAG)
 * Search external papers from Semantic Scholar and arXiv
@@ -101,7 +97,7 @@ ResearchIQ is that tool. It works offline with built-in heuristic analysis, and 
 
 ## How it works
 
-```
+`
 ┌─────────────────────────────────────────────────────┐
 │                   FRONTEND                          │
 │             React + TypeScript + Vite               │
@@ -127,7 +123,7 @@ ResearchIQ is that tool. It works offline with built-in heuristic analysis, and 
     │ (Supabase)  │    │  OpenAI, Groq,   │
     │             │    │  Ollama, etc     │
     └─────────────┘    └──────────────────┘
-```
+`
 
 ---
 
@@ -140,7 +136,7 @@ ResearchIQ is that tool. It works offline with built-in heuristic analysis, and 
 
 ### Backend
 
-```bash
+`ash
 cd backend
 python -m venv .venv
 source .venv/bin/activate    # macOS/Linux
@@ -148,19 +144,19 @@ source .venv/bin/activate    # macOS/Linux
 pip install -r requirements.txt
 cp .env.example .env
 uvicorn app.main:app --reload
-```
+`
 
 API runs at http://localhost:8000
 Docs at http://localhost:8000/docs
 
 ### Frontend
 
-```bash
+`ash
 cd frontend
 npm install
 cp .env.example .env
 npm run dev
-```
+`
 
 App runs at http://localhost:5173
 
@@ -170,22 +166,22 @@ App runs at http://localhost:5173
 
 ### Backend
 
-```
+`
 DATABASE_URL=sqlite:///./researchiq.db
 JWT_SECRET=your-random-secret
 FRONTEND_ORIGIN=http://localhost:5173
 LLM_API_KEY=your-api-key
 LLM_BASE_URL=https://api.groq.com/openai/v1
 LLM_MODEL=openai/gpt-oss-20b
-```
+`
 
 Only DATABASE_URL and JWT_SECRET are required. The LLM settings are optional.
 
 ### Frontend
 
-```
+`
 VITE_API_URL=http://localhost:8000
-```
+`
 
 ---
 
@@ -248,12 +244,22 @@ To enable AI analysis, set the LLM environment variables. Any OpenAI compatible 
 
 ---
 
+## Known issues
+
+* Groq free tier has strict rate limits — might hit 429 errors if too many analyses run too fast
+* PDF viewer doesn't work for papers uploaded before the database persistence update — need to re-upload
+* The heuristic analysis is pretty basic — just pattern matches common phrases
+* Some PDFs with weird formatting don't extract text properly
+* The visualizations could be more interactive (currently just static displays)
+
+---
+
 ## Testing
 
-```bash
+`ash
 cd backend
 pytest -v
-```
+`
 
 ---
 
@@ -292,4 +298,3 @@ MIT
 * [Scikit-learn](https://scikit-learn.org/)
 * [FAISS](https://faiss.ai/)
 * [Lucide](https://lucide.dev/)
-

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import {
   analyseDocument,
   comparePapers,
@@ -7,14 +8,32 @@ import {
   searchPapers,
   uploadDocuments,
 } from "./api";
+import { useAuth } from "./context/AuthContext";
+import { BarChart3, MessageSquare, MessageSquarePlus } from "lucide-react";
+
 import { AnalysisPanel } from "./components/AnalysisPanel";
+import { BatchActions } from "./components/BatchActions";
+import { ChatPanel } from "./components/ChatPanel";
+import { CollaborationPanel } from "./components/CollaborationPanel";
+import { CollectionsPanel } from "./components/CollectionsPanel";
 import { ComparisonPanel } from "./components/ComparisonPanel";
+import { DiscoveryPanel } from "./components/DiscoveryPanel";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { ExportButtons } from "./components/ExportButtons";
 import { Header } from "./components/Header";
 import { Hero } from "./components/Hero";
 import { PaperVault } from "./components/PaperVault";
+import { PdfViewer } from "./components/PdfViewer";
 import { ResearchConsole } from "./components/ResearchConsole";
+import { ShareButton } from "./components/ShareButton";
+import { SummaryLevelSelector } from "./components/SummaryLevelSelector";
+import { SystemStatus } from "./components/SystemStatus";
 import { Toast } from "./components/Toast";
 import { UploadPanel } from "./components/UploadPanel";
+import { VisualizationsPanel } from "./components/VisualizationsPanel";
+import { LoginPage } from "./pages/LoginPage";
+import { RegisterPage } from "./pages/RegisterPage";
+
 import type {
   Analysis,
   ComparisonResult,
@@ -22,30 +41,78 @@ import type {
   SearchResult,
 } from "./types";
 
+export type WorkspaceTab =
+  | "overview"
+  | "search"
+  | "analysis"
+  | "comparison"
+  | "chat"
+  | "discovery"
+  | "visualizations"
+  | "collaboration";
+
 interface ToastState {
   message: string;
   type: "success" | "error";
 }
 
 export default function App() {
+  const { user } = useAuth();
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/" />} />
+        <Route path="/register" element={!user ? <RegisterPage /> : <Navigate to="/" />} />
+        <Route path="/*" element={user ? <AuthenticatedApp /> : <Navigate to="/login" />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+function AuthenticatedApp() {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [analysingId, setAnalysingId] = useState<number | null>(null);
-  const [activeDocumentId, setActiveDocumentId] = useState<number | null>(null);
-  const [activeAnalysis, setActiveAnalysis] = useState<Analysis | null>(null);
+
+  const [analysingId, setAnalysingId] = useState<number | null>(
+    null,
+  );
+
+  const [activeDocumentId, setActiveDocumentId] = useState<
+    number | null
+  >(null);
+
+  const [activeAnalysis, setActiveAnalysis] =
+    useState<Analysis | null>(null);
+
   const [searching, setSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>(
+    [],
+  );
+
   const [comparing, setComparing] = useState(false);
-  const [comparison, setComparison] = useState<ComparisonResult | null>(null);
+
+  const [comparison, setComparison] =
+    useState<ComparisonResult | null>(null);
+
   const [toast, setToast] = useState<ToastState | null>(null);
   const [online, setOnline] = useState(true);
 
-  const uploadRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] =
+    useState<WorkspaceTab>("overview");
+
+  const [pdfViewer, setPdfViewer] = useState<{
+    documentId: number;
+    title: string;
+  } | null>(null);
 
   const activeDocument = useMemo(
-    () => documents.find((document) => document.id === activeDocumentId),
+    () =>
+      documents.find(
+        (document) => document.id === activeDocumentId,
+      ),
     [documents, activeDocumentId],
   );
 
@@ -55,9 +122,11 @@ export default function App() {
 
   async function loadDocuments() {
     setLoading(true);
+
     try {
       const data = await getDocuments();
-      setDocuments(data);
+
+      setDocuments(data.items);
       setOnline(true);
     } catch (error) {
       setOnline(false);
@@ -77,6 +146,50 @@ export default function App() {
     });
   }
 
+  function openWorkspace(tab: WorkspaceTab) {
+    setActiveTab(tab);
+
+    requestAnimationFrame(() => {
+      document.getElementById("workspace")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }
+
+  function scrollToUpload() {
+    requestAnimationFrame(() => {
+      document.getElementById("upload")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }
+
+  function scrollToPaperVault() {
+    requestAnimationFrame(() => {
+      document.getElementById("paper-vault")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }
+
+  function scrollToResearchConsole() {
+  setActiveTab("search");
+
+  requestAnimationFrame(() => {
+    document.getElementById("console")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  });
+}
+
+  function handleViewPdf(documentId: number, title: string) {
+    setPdfViewer({ documentId, title });
+  }
+
   function toggleDocument(id: number) {
     setSelectedIds((current) =>
       current.includes(id)
@@ -87,16 +200,19 @@ export default function App() {
 
   async function handleUpload(files: File[]) {
     setUploading(true);
+
     try {
       const created = await uploadDocuments(files);
+
       setDocuments((current) => [...created, ...current]);
+      setOnline(true);
+
       setToast({
         type: "success",
         message: `${created.length} specimen${
           created.length === 1 ? "" : "s"
         } safely contained.`,
       });
-      setOnline(true);
     } catch (error) {
       showError(error);
     } finally {
@@ -105,18 +221,30 @@ export default function App() {
   }
 
   async function handleDelete(id: number) {
-    const document = documents.find((item) => item.id === id);
-    const confirmed = window.confirm(
-      `Incinerate "${document?.title || document?.filename || "this paper"}"?`,
+    const target = documents.find(
+      (document) => document.id === id,
     );
-    if (!confirmed) return;
+
+    const confirmed = window.confirm(
+      `Incinerate "${
+        target?.title || target?.filename || "this paper"
+      }"?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
 
     try {
       await deleteDocument(id);
+
       setDocuments((current) =>
         current.filter((document) => document.id !== id),
       );
-      setSelectedIds((current) => current.filter((value) => value !== id));
+
+      setSelectedIds((current) =>
+        current.filter((selectedId) => selectedId !== id),
+      );
 
       if (activeDocumentId === id) {
         setActiveDocumentId(null);
@@ -134,20 +262,31 @@ export default function App() {
 
   async function handleAnalyse(id: number) {
     setAnalysingId(id);
+    openWorkspace("analysis");
+
     try {
       const analysis = await analyseDocument(id);
+
       setActiveDocumentId(id);
       setActiveAnalysis(analysis);
 
       setDocuments((current) =>
         current.map((document) =>
-          document.id === id ? { ...document, analysis } : document,
+          document.id === id
+            ? {
+                ...document,
+                analysis,
+              }
+            : document,
         ),
       );
 
       setToast({
         type: "success",
-        message: "Analysis complete. The paper has confessed.",
+        message:
+          analysis.analysis_mode === "llm"
+            ? "LLM analysis complete. The paper has confessed."
+            : "Local analysis complete. The LLM was unavailable.",
       });
     } catch (error) {
       showError(error);
@@ -156,10 +295,25 @@ export default function App() {
     }
   }
 
+  function handleSelectDocument(id: number) {
+    const doc = documents.find((d) => d.id === id);
+    if (doc) {
+      setActiveDocumentId(id);
+      setActiveAnalysis(doc.analysis || null);
+      openWorkspace("analysis");
+    }
+  }
+
   async function handleSearch(query: string) {
     setSearching(true);
+    setActiveTab("search");
+
     try {
-      const results = await searchPapers(query, selectedIds);
+      const results = await searchPapers(
+        query,
+        selectedIds,
+      );
+
       setSearchResults(results);
     } catch (error) {
       showError(error);
@@ -169,15 +323,28 @@ export default function App() {
   }
 
   async function handleCompare() {
-    if (selectedIds.length < 2) return;
+    if (selectedIds.length < 2) {
+      setToast({
+        type: "error",
+        message:
+          "Select at least two papers before comparing them.",
+      });
+
+      return;
+    }
 
     setComparing(true);
+    setActiveTab("comparison");
+
     try {
       const result = await comparePapers(selectedIds);
+
       setComparison(result);
+
       setToast({
         type: "success",
-        message: "Comparison reactor completed without exploding.",
+        message:
+          "Comparison reactor completed without exploding.",
       });
     } catch (error) {
       showError(error);
@@ -186,63 +353,283 @@ export default function App() {
     }
   }
 
-  function scrollToUpload() {
-    document.getElementById("upload")?.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-  }
-
   return (
-    <>
-      <Header online={online} />
+    <div className="app-shell">
+      <Header
+        online={online}
+        activeTab={activeTab}
+        onNavigate={openWorkspace}
+        onPaperVaultClick={scrollToPaperVault}
+      />
 
-      <main>
+      <ErrorBoundary>
+      <main className="app-main">
         <Hero
           documentCount={documents.length}
           onUploadClick={scrollToUpload}
+          onConsoleClick={() => openWorkspace("search")}
         />
 
-        <div className="workspace-grid" ref={uploadRef}>
-          <UploadPanel busy={uploading} onUpload={handleUpload} />
+        <div className="status-row">
+          <SystemStatus />
 
-          <PaperVault
-            documents={documents}
-            loading={loading}
-            selectedIds={selectedIds}
-            analysingId={analysingId}
-            onToggle={toggleDocument}
-            onAnalyse={handleAnalyse}
-            onDelete={handleDelete}
-          />
+          <span>
+            {selectedIds.length} selected · {documents.length} in
+            the vault
+          </span>
         </div>
 
-        <div className="dashboard-grid">
-          <ResearchConsole
-            selectedCount={selectedIds.length}
-            searching={searching}
-            results={searchResults}
-            onSearch={handleSearch}
-          />
+        <section
+          className="research-workspace"
+          id="workspace"
+        >
+          <aside className="workspace-sidebar">
+            <div
+              id="upload"
+              className="scroll-anchor"
+            >
+              <UploadPanel
+                busy={uploading}
+                onUpload={handleUpload}
+              />
+            </div>
 
-          <AnalysisPanel
-            document={activeDocument}
-            analysis={activeAnalysis || activeDocument?.analysis}
-          />
-        </div>
+            <div
+              id="paper-vault"
+              className="scroll-anchor"
+            >
+              <PaperVault
+                documents={documents}
+                loading={loading}
+                selectedIds={selectedIds}
+                analysingId={analysingId}
+                onToggle={toggleDocument}
+                onAnalyse={handleAnalyse}
+                onDelete={handleDelete}
+                onView={handleViewPdf}
+              />
 
-        <ComparisonPanel
-          documents={documents}
-          selectedIds={selectedIds}
-          comparing={comparing}
-          result={comparison}
-          onCompare={handleCompare}
-        />
+              <BatchActions
+                selectedIds={selectedIds}
+                onComplete={loadDocuments}
+              />
+
+              <ShareButton selectedIds={selectedIds} />
+
+              <CollectionsPanel selectedIds={selectedIds} />
+            </div>
+          </aside>
+
+          <section className="workspace-content">
+            <nav
+              className="workspace-tabs"
+              aria-label="Research tools"
+            >
+              {(
+                [
+                  ["overview", "Overview"],
+                  ["search", "Search"],
+                  ["analysis", "Analysis"],
+                  ["comparison", `Compare (${selectedIds.length})`],
+                  ["chat", "Chat"],
+                  ["discovery", "Discover"],
+                  ["visualizations", "Visualize"],
+                  ["collaboration", "Notes"],
+                ] as const
+              ).map(([tab, label]) => (
+                <button
+                  key={tab}
+                  type="button"
+                  className={`workspace-tab ${
+                    activeTab === tab ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab(tab)}
+                >
+                  {label}
+                </button>
+              ))}
+            </nav>
+
+            <div className="workspace-panel">
+              {activeTab === "overview" && (
+                <section className="workspace-overview">
+                  <div className="overview-heading">
+                    <span className="eyebrow">
+                      Research workspace
+                    </span>
+
+                    <h2>
+                      One workspace. No laboratory hiking
+                      required.
+                    </h2>
+
+                    <p>
+                      Upload and select papers from the library,
+                      then switch between search, structured
+                      analysis and comparison.
+                    </p>
+                  </div>
+
+                  <div className="overview-cards">
+                    <button
+                      type="button"
+                      className="overview-card"
+                      onClick={() => setActiveTab("search")}
+                    >
+                      <strong>Search papers</strong>
+
+                      <span>
+                        Find relevant passages across the selected
+                        documents.
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="overview-card"
+                      onClick={() => setActiveTab("analysis")}
+                    >
+                      <strong>Analyse a paper</strong>
+
+                      <span>
+                        Extract its summary, methods, findings,
+                        strengths and limitations.
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="overview-card"
+                      onClick={() =>
+                        setActiveTab("comparison")
+                      }
+                    >
+                      <strong>Compare papers</strong>
+
+                      <span>
+                        Compare two or more selected papers in one
+                        view.
+                      </span>
+                    </button>
+                  </div>
+
+                  <div className="workflow-note">
+                    <strong>Workflow</strong>
+
+                    <span>
+                      Upload → select → analyse, search or compare.
+                    </span>
+                  </div>
+                </section>
+              )}
+
+              {activeTab === "search" && (
+                <ResearchConsole
+                  selectedCount={selectedIds.length}
+                  searching={searching}
+                  results={searchResults}
+                  onSearch={handleSearch}
+                />
+              )}
+
+              {activeTab === "analysis" && (
+                <AnalysisPanel
+                  document={activeDocument}
+                  analysis={
+                    activeAnalysis ||
+                    activeDocument?.analysis
+                  }
+                  onSelectDocument={handleSelectDocument}
+                />
+              )}
+
+              {activeTab === "comparison" && (
+                <ComparisonPanel
+                  documents={documents}
+                  selectedIds={selectedIds}
+                  comparing={comparing}
+                  result={comparison}
+                  onCompare={handleCompare}
+                />
+              )}
+
+              {activeTab === "chat" && activeDocument && (
+                <ChatPanel
+                  documentId={activeDocument.id}
+                  documentTitle={activeDocument.title || activeDocument.filename}
+                  hasAnalysis={!!activeDocument.analysis}
+                />
+              )}
+
+              {activeTab === "chat" && !activeDocument && (
+                <div className="analysis-panel empty">
+                  <div className="feature-locked">
+                    <div className="feature-locked-icon">
+                      <MessageSquare size={40} />
+                    </div>
+                    <h3>Select a paper to chat with</h3>
+                    <p>Choose a paper from the vault and analyse it first.</p>
+                    <div className="feature-locked-steps">
+                      <span>1. Select a paper from the vault</span>
+                      <span>2. Click <strong>Analyse</strong></span>
+                      <span>3. Then chat will be available</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "discovery" && <DiscoveryPanel />}
+
+              {activeTab === "visualizations" && activeDocument && (
+                <VisualizationsPanel documentId={activeDocument.id} hasAnalysis={!!activeDocument.analysis} />
+              )}
+
+              {activeTab === "visualizations" && !activeDocument && (
+                <div className="analysis-panel empty">
+                  <div className="feature-locked">
+                    <div className="feature-locked-icon">
+                      <BarChart3 size={40} />
+                    </div>
+                    <h3>Select a paper to visualize</h3>
+                    <p>Choose a paper from the vault and analyse it first.</p>
+                    <div className="feature-locked-steps">
+                      <span>1. Select a paper from the vault</span>
+                      <span>2. Click <strong>Analyse</strong></span>
+                      <span>3. Then visualizations will be available</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "collaboration" && activeDocument && (
+                <CollaborationPanel documentId={activeDocument.id} />
+              )}
+
+              {activeTab === "collaboration" && !activeDocument && (
+                <div className="analysis-panel empty">
+                  <div className="feature-locked">
+                    <div className="feature-locked-icon">
+                      <MessageSquarePlus size={40} />
+                    </div>
+                    <h3>Select a paper for notes</h3>
+                    <p>Choose a paper from the vault first.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        </section>
       </main>
+      </ErrorBoundary>
 
       <footer>
-        <span>RESEARCHIQ LAB · BUILT FOR CURIOUS HUMANS</span>
-        <span>AI can assist. Evidence still has to do the heavy lifting.</span>
+        <span>
+          RESEARCHIQ LAB · BUILT BY ALY
+        </span>
+
+        <span>
+          Papers don't read themselves. But now they're easier to digest.
+        </span>
       </footer>
 
       {toast && (
@@ -252,6 +639,14 @@ export default function App() {
           onClose={() => setToast(null)}
         />
       )}
-    </>
+
+      {pdfViewer && (
+        <PdfViewer
+          documentId={pdfViewer.documentId}
+          title={pdfViewer.title}
+          onClose={() => setPdfViewer(null)}
+        />
+      )}
+    </div>
   );
 }

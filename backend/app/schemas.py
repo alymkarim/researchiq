@@ -1,52 +1,149 @@
 from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, Field
 
+
+# =========================================================
+# ANALYSIS
+# =========================================================
+
 class AnalysisOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
     id: int
     document_id: int
-    objective: str
-    methodology: str
-    dataset: str
-    findings: str
-    limitations: str
-    keywords: str
-    created_at: datetime
+
+    summary: str | None = None
+    objective: str | None = None
+    methodology: str | None = None
+    dataset: str | None = None
+    findings: str | None = None
+
+    # These are stored as strings in the current database model.
+    strengths: str | None = None
+    limitations: str | None = None
+    keywords: str | None = None
+
+    analysis_mode: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# =========================================================
+# DOCUMENTS
+# =========================================================
 
 class DocumentOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
     id: int
     filename: str
-    title: str | None
-    authors: str | None
-    abstract: str | None
-    created_at: datetime
+    title: str | None = None
+    authors: str | None = None
+    abstract: str | None = None
+    created_at: datetime | None = None
     analysis: AnalysisOut | None = None
 
-class SearchRequest(BaseModel):
-    query: str = Field(min_length=2)
-    limit: int = Field(default=5, ge=1, le=20)
+    model_config = ConfigDict(from_attributes=True)
 
-class SearchResult(BaseModel):
+
+# =========================================================
+# SEARCH
+# =========================================================
+
+class SearchRequest(BaseModel):
+    query: str = Field(
+        min_length=2,
+        max_length=300,
+    )
+
+    document_ids: list[int] = Field(
+        default_factory=list,
+    )
+
+    limit: int = Field(
+        default=5,
+        ge=1,
+        le=20,
+    )
+
+
+class SearchResultOut(BaseModel):
     document_id: int
-    title: str
+    document_title: str
     filename: str
-    excerpt: str
+    page: int | None = None
+    text: str
     score: float
 
-class CompareRequest(BaseModel):
-    document_ids: list[int] = Field(min_length=2, max_length=5)
+
+# Backwards-compatible name expected by the existing search router.
+SearchResult = SearchResultOut
+
+
+# =========================================================
+# COMPARISON
+# =========================================================
+
+class ComparisonRequest(BaseModel):
+    document_ids: list[int] = Field(
+        min_length=2,
+        max_length=10,
+    )
+
+
+# Backwards-compatible name expected by some comparison routers.
+CompareRequest = ComparisonRequest
+
 
 class ComparisonPaper(BaseModel):
     document_id: int
     title: str
-    objective: str
-    methodology: str
-    dataset: str
-    findings: str
-    limitations: str
+    filename: str | None = None
+
+    summary: str | None = None
+    objective: str | None = None
+    methodology: str | None = None
+    dataset: str | None = None
+    findings: str | None = None
+
+    strengths: str | None = None
+    limitations: str | None = None
+    keywords: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PaginatedDocuments(BaseModel):
+    items: list[DocumentOut]
+    total: int
+    page: int
+    per_page: int
+    pages: int
+
 
 class ComparisonOut(BaseModel):
-    papers: list[ComparisonPaper]
-    common_keywords: list[str]
-    summary: str
+    # Supports the original comparison response.
+    documents: list[DocumentOut] = Field(
+        default_factory=list,
+    )
+
+    objective: str | None = None
+    methodology: str | None = None
+    dataset: str | None = None
+    findings: str | None = None
+    strengths: str | None = None
+    limitations: str | None = None
+
+    # Supports the newer comparison router if it returns individual papers.
+    papers: list[ComparisonPaper] = Field(
+        default_factory=list,
+    )
+
+    shared_keywords: list[str] = Field(
+        default_factory=list,
+    )
+
+    similarities: list[str] = Field(
+        default_factory=list,
+    )
+
+    differences: list[str] = Field(
+        default_factory=list,
+    )

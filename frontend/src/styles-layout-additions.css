@@ -1,0 +1,450 @@
+/*
+Append this file to the end of frontend/src/styles.css.
+These selectors are intentionally specific to the new workspace.
+*/
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.app-main {
+  width: min(1440px, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.status-row > span {
+  font-family: monospace;
+  font-weight: 700;
+}
+
+.research-workspace {
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+  margin: 1.5rem 0 3rem;
+}
+
+.workspace-sidebar {
+  position: sticky;
+  top: 1rem;
+  display: grid;
+  gap: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  padding: 0 0.35rem 0.5rem 0;
+  scrollbar-width: thin;
+}
+
+.workspace-content {
+  min-width: 0;
+  overflow: hidden;
+  border: 3px solid #1d1d1d;
+  border-radius: 24px;
+  background: #fffdf4;
+  box-shadow: 7px 7px 0 #1d1d1d;
+}
+
+.workspace-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  gap: 0.55rem;
+  overflow-x: auto;
+  padding: 0.85rem;
+  border-bottom: 3px solid #1d1d1d;
+  background: #f4e9ff;
+}
+
+.workspace-tab {
+  min-height: 42px;
+  padding: 0.65rem 1rem;
+  border: 2px solid #1d1d1d;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1d1d1d;
+  font: inherit;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.workspace-tab:hover {
+  transform: translateY(-2px);
+  box-shadow: 3px 3px 0 #1d1d1d;
+}
+
+.workspace-tab.active {
+  background: #ffe66d;
+  box-shadow: 3px 3px 0 #1d1d1d;
+}
+
+.workspace-panel {
+  min-height: 650px;
+  padding: 1.25rem;
+}
+
+.workspace-overview {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.overview-heading {
+  max-width: 760px;
+}
+
+.overview-heading h2 {
+  max-width: 720px;
+  margin: 0.35rem 0 0.75rem;
+  font-size: clamp(2rem, 4vw, 3.6rem);
+  line-height: 0.98;
+}
+
+.overview-heading p {
+  max-width: 680px;
+  margin: 0;
+  line-height: 1.7;
+}
+
+.overview-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.overview-card {
+  display: grid;
+  align-content: start;
+  gap: 0.55rem;
+  min-height: 170px;
+  padding: 1.1rem;
+  border: 3px solid #1d1d1d;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #1d1d1d;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  box-shadow: 5px 5px 0 #1d1d1d;
+}
+
+.overview-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0 #1d1d1d;
+}
+
+.overview-card strong {
+  font-size: 1.15rem;
+}
+
+.overview-card span {
+  line-height: 1.55;
+}
+
+.workflow-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border: 3px solid #1d1d1d;
+  border-radius: 16px;
+  background: #dff8d8;
+}
+
+.system-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.8rem;
+  border: 2px solid #1d1d1d;
+  border-radius: 999px;
+  font-family: monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.system-status.online {
+  background: #dff8d8;
+}
+
+.system-status.offline {
+  background: #ffd9d2;
+}
+
+.system-status.checking {
+  background: #fff3bf;
+}
+
+.spin {
+  animation: status-spin 0.9s linear infinite;
+}
+
+@keyframes status-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty-tool-state {
+  display: grid;
+  place-content: center;
+  min-height: 520px;
+  max-width: 680px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.empty-tool-state h2 {
+  margin: 0.45rem 0;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 1;
+}
+
+.empty-tool-state p {
+  line-height: 1.7;
+}
+
+.analysis-view {
+  display: grid;
+  gap: 1rem;
+}
+
+.analysis-view-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 3px solid #1d1d1d;
+}
+
+.analysis-view-header h2 {
+  margin: 0.35rem 0 0;
+}
+
+.analysis-mode {
+  flex: 0 0 auto;
+  padding: 0.45rem 0.7rem;
+  border: 2px solid #1d1d1d;
+  border-radius: 999px;
+  font-family: monospace;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.analysis-mode.llm {
+  background: #dff8d8;
+}
+
+.analysis-mode.heuristic,
+.analysis-mode.unknown {
+  background: #fff3bf;
+}
+
+.analysis-two-column {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.analysis-field {
+  min-width: 0;
+  padding: 1rem;
+  border: 2px solid #1d1d1d;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.analysis-field h3 {
+  margin: 0 0 0.65rem;
+}
+
+.analysis-field p,
+.analysis-field li {
+  line-height: 1.65;
+}
+
+.analysis-field ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.keyword-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.keyword-list span {
+  padding: 0.42rem 0.65rem;
+  border: 2px solid #1d1d1d;
+  border-radius: 999px;
+  background: #f4e9ff;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+@media (max-width: 1080px) {
+  .research-workspace {
+    grid-template-columns: 310px minmax(0, 1fr);
+  }
+
+  .overview-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 820px) {
+  .app-main {
+    width: min(100% - 1rem, 1440px);
+  }
+
+  .status-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .research-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-sidebar {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .workspace-content {
+    box-shadow: 4px 4px 0 #1d1d1d;
+    border-radius: 18px;
+  }
+
+  .workspace-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    gap: 0.35rem;
+    padding: 0.65rem;
+  }
+
+  .workspace-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .workspace-tab {
+    min-height: 36px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.62rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .workspace-panel {
+    min-height: auto;
+    padding: 0.85rem;
+  }
+
+  .analysis-two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-view-header,
+  .workflow-note {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .overview-heading h2 {
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
+  }
+
+  .empty-tool-state {
+    min-height: 380px;
+    padding: clamp(0.75rem, 3vw, 2rem);
+  }
+
+  .empty-tool-state h2 {
+    font-size: clamp(1.5rem, 4vw, 2.4rem);
+  }
+}
+
+@media (max-width: 480px) {
+  .app-main {
+    width: 100%;
+  }
+
+  .research-workspace {
+    gap: 0.75rem;
+    margin: 1rem 0 2rem;
+  }
+
+  .workspace-sidebar {
+    gap: 0.75rem;
+  }
+
+  .workspace-content {
+    border-width: 2px;
+    border-radius: 14px;
+    box-shadow: 3px 3px 0 #1d1d1d;
+  }
+
+  .workspace-tabs {
+    gap: 0.25rem;
+    padding: 0.5rem;
+  }
+
+  .workspace-tab {
+    min-height: 32px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.58rem;
+    border-width: 1.5px;
+  }
+
+  .workspace-panel {
+    padding: 0.65rem;
+    border-radius: 14px;
+    box-shadow: 3px 3px 0 #1d1d1d;
+  }
+
+  .overview-heading h2 {
+    font-size: clamp(1.25rem, 5vw, 1.8rem);
+  }
+
+  .overview-card {
+    min-height: 120px;
+    padding: 0.75rem;
+    border-radius: 14px;
+    box-shadow: 3px 3px 0 #1d1d1d;
+  }
+
+  .workflow-note {
+    padding: 0.65rem 0.75rem;
+  }
+
+  .analysis-field {
+    padding: 0.75rem;
+    border-radius: 12px;
+  }
+
+  .keyword-list span {
+    font-size: 0.55rem;
+    padding: 0.3rem 0.5rem;
+  }
+
+  .status-row > span {
+    font-size: 0.75rem;
+  }
+}

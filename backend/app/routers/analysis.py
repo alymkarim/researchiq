@@ -1,30 +1,66 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+
 from ..database import get_db
 from ..models import Analysis, Document
 from ..schemas import AnalysisOut
 from ..services.analysis_service import analyse_document
 
+
 router = APIRouter(prefix="/api/analysis", tags=["analysis"])
 
+
 @router.post("/{document_id}", response_model=AnalysisOut)
-async def create_analysis(document_id: int, db: Session = Depends(get_db)):
-    document = db.get(Document, document_id)
-    if not document:
-        raise HTTPException(status_code=404, detail="Document not found.")
+async def analyse_saved_document(
+    document_id: int,
+    db: Session = Depends(get_db),
+) -> Analysis:
+    document = (
+        db.query(Document)
+        .filter(Document.id == document_id)
+        .first()
+    )
 
-    result = await analyse_document(document.full_text, document.title or document.filename)
+    if document is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found.",
+        )
 
-    analysis = document.analysis or Analysis(document_id=document.id)
-    db.add(analysis)
+    document_text = document.full_text
 
-    analysis.objective = result["objective"]
-    analysis.methodology = result["methodology"]
-    analysis.dataset = result["dataset"]
-    analysis.findings = result["findings"]
-    analysis.limitations = result["limitations"]
-    analysis.keywords = result["keywords"]
+    if not document_text or not document_text.strip():
+        raise HTTPException(
+            status_code=422,
+            detail="The document does not contain extractable text.",
+        )
+
+    result = await analyse_document(
+        text=document_text,
+        title=document.title or document.filename,
+    )
+
+    analysis = (
+        db.query(Analysis)
+        .filter(Analysis.document_id == document_id)
+        .first()
+    )
+
+    if analysis is None:
+        analysis = Analysis(document_id=document_id)
+        db.add(analysis)
+
+    analysis.summary = result.get("summary")
+    analysis.objective = result.get("objective")
+    analysis.methodology = result.get("methodology")
+    analysis.dataset = result.get("dataset")
+    analysis.findings = result.get("findings")
+    analysis.strengths = result.get("strengths")
+    analysis.limitations = result.get("limitations")
+    analysis.keywords = result.get("keywords")
+    analysis.analysis_mode = result.get("analysis_mode")
 
     db.commit()
     db.refresh(analysis)
+
     return analysis

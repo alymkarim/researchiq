@@ -1,134 +1,205 @@
+import { useState } from "react";
 import {
-  BrainCircuit,
-  CheckCircle2,
-  Lightbulb,
-  Microscope,
-  TriangleAlert,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  FlaskConical,
+  ListChecks,
+  Search,
+  Sparkles,
+  Target,
+  TestTube,
 } from "lucide-react";
 import type { Analysis, DocumentItem } from "../types";
+import { CitationExport } from "./CitationExport";
+import { ExportButtons } from "./ExportButtons";
+import { Recommendations } from "./Recommendations";
+import { SummaryLevelSelector } from "./SummaryLevelSelector";
 
 interface AnalysisPanelProps {
-  document?: DocumentItem;
+  document?: DocumentItem | null;
   analysis?: Analysis | null;
+  onSelectDocument?: (id: number) => void;
 }
 
-function toList(value: unknown): string[] {
-  if (Array.isArray(value)) return value.map(String);
-  if (typeof value === "string") {
-    return value
-      .split(/\n|,|;/)
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-  return [];
-}
-
-export function AnalysisPanel({
-  document,
-  analysis,
-}: AnalysisPanelProps) {
-  const keywords = toList(analysis?.keywords);
-  const strengths = toList(analysis?.strengths);
-  const limitations = toList(analysis?.limitations);
+function CollapsibleSection({
+  title,
+  icon,
+  children,
+  defaultOpen = true,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <section className="lab-panel analysis-panel">
-      <div className="panel-heading">
-        <div>
-          <span className="section-kicker">Analysis chamber</span>
-          <h2>Paper Diagnostics</h2>
+    <div className={`analysis-section ${open ? "open" : ""}`}>
+      <button
+        className="analysis-section-header"
+        onClick={() => setOpen(!open)}
+      >
+        <div className="analysis-section-title">
+          {icon}
+          <span>{title}</span>
         </div>
-        <span className="panel-number">04</span>
+        {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+      </button>
+      {open && <div className="analysis-section-body">{children}</div>}
+    </div>
+  );
+}
+
+export function AnalysisPanel({ document, analysis, onSelectDocument }: AnalysisPanelProps) {
+  if (!document) {
+    return (
+      <div className="analysis-panel empty">
+        <div className="empty-state">
+          <div className="empty-state-icon">
+            <FlaskConical size={40} />
+          </div>
+          <h3>No paper selected</h3>
+          <p>Select a paper from the vault and click Analyse to see results.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!analysis) {
+    return (
+      <div className="analysis-panel empty">
+        <div className="feature-locked">
+          <div className="feature-locked-icon">
+            <BookOpen size={40} />
+          </div>
+          <h3>{document.title || document.filename}</h3>
+          <p>This paper has not been analysed yet.</p>
+          <div className="feature-locked-steps">
+            <span>1. Click the <strong>Analyse</strong> button on this paper in the vault</span>
+            <span>2. Wait for the analysis to complete (may take 30-60 seconds with local LLM)</span>
+            <span>3. Analysis results will appear here</span>
+            <span>4. Chat, visualizations, and export will be enabled</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const keywords = analysis.keywords
+    ?.split(",")
+    .map((kw) => kw.trim())
+    .filter(Boolean);
+
+  const modeLabel =
+    analysis.analysis_mode === "llm" ? "LLM Analysis" : "Heuristic Fallback";
+  const modeClass =
+    analysis.analysis_mode === "llm" ? "mode-llm" : "mode-heuristic";
+
+  return (
+    <article className="analysis-panel">
+      <header className="analysis-header">
+        <span className="analysis-label">Structured Analysis</span>
+        <h2 className="analysis-title">
+          {document.title || document.filename}
+        </h2>
+        <div className="analysis-header-actions">
+          <span className={`analysis-mode-badge ${modeClass}`}>{modeLabel}</span>
+          <ExportButtons documentId={document.id} documentTitle={document.title || document.filename} />
+        </div>
+      </header>
+
+      <SummaryLevelSelector documentId={document.id} />
+
+      {analysis.summary && (
+        <div className="analysis-summary-card">
+          <h3>
+            <Sparkles size={16} /> Executive Summary
+          </h3>
+          <p>{analysis.summary}</p>
+        </div>
+      )}
+
+      <div className="analysis-sections">
+        <CollapsibleSection
+          title="Objective"
+          icon={<Target size={16} />}
+        >
+          <p>{analysis.objective}</p>
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Methodology"
+          icon={<FlaskConical size={16} />}
+        >
+          <p>{analysis.methodology}</p>
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Dataset or Sample"
+          icon={<TestTube size={16} />}
+        >
+          <p>{analysis.dataset}</p>
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Main Findings"
+          icon={<Search size={16} />}
+        >
+          <p>{analysis.findings}</p>
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Strengths"
+          icon={<ListChecks size={16} />}
+        >
+          <ul className="analysis-list">
+            {analysis.strengths
+              ?.split("\n")
+              .filter(Boolean)
+              .map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+          </ul>
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Limitations"
+          icon={<ListChecks size={16} />}
+        >
+          <ul className="analysis-list">
+            {analysis.limitations
+              ?.split("\n")
+              .filter(Boolean)
+              .map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+          </ul>
+        </CollapsibleSection>
       </div>
 
-      {!document || !analysis ? (
-        <div className="empty-state analysis-empty">
-          <Microscope size={42} />
-          <strong>No specimen under the microscope.</strong>
-          <span>
-            Press Analyse on a paper to produce an unnecessarily official lab
-            report.
-          </span>
-        </div>
-      ) : (
-        <div className="analysis-content">
-          <div className="analysis-title">
-            <span>
-              <BrainCircuit size={18} />
-              ACTIVE SPECIMEN
-            </span>
-            <h3>{document.title || document.filename}</h3>
-          </div>
-
-          <article className="analysis-block summary-block">
-            <span className="analysis-icon">
-              <Lightbulb size={20} />
-            </span>
-            <div>
-              <h4>Executive summary</h4>
-              <p>
-                {analysis.summary ||
-                  analysis.findings ||
-                  "The analysis completed, but the backend did not return a summary field."}
-              </p>
-            </div>
-          </article>
-
-          {analysis.methodology && (
-            <article className="analysis-block">
-              <span className="analysis-icon">
-                <Microscope size={20} />
+      {keywords && keywords.length > 0 && (
+        <div className="analysis-keywords">
+          <h3>Keywords</h3>
+          <div className="keyword-chips">
+            {keywords.map((kw) => (
+              <span className="keyword-chip" key={kw}>
+                {kw}
               </span>
-              <div>
-                <h4>Methodology</h4>
-                <p>{analysis.methodology}</p>
-              </div>
-            </article>
-          )}
-
-          {keywords.length > 0 && (
-            <div className="keyword-cloud">
-              {keywords.map((keyword) => (
-                <span key={keyword}>{keyword}</span>
-              ))}
-            </div>
-          )}
-
-          <div className="analysis-columns">
-            <article>
-              <h4>
-                <CheckCircle2 size={18} />
-                Strengths
-              </h4>
-              {strengths.length ? (
-                <ul>
-                  {strengths.map((strength) => (
-                    <li key={strength}>{strength}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No structured strengths returned.</p>
-              )}
-            </article>
-
-            <article>
-              <h4>
-                <TriangleAlert size={18} />
-                Limitations
-              </h4>
-              {limitations.length ? (
-                <ul>
-                  {limitations.map((limitation) => (
-                    <li key={limitation}>{limitation}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No structured limitations returned.</p>
-              )}
-            </article>
+            ))}
           </div>
         </div>
       )}
-    </section>
+
+      <CitationExport documentId={document.id} />
+
+      {onSelectDocument && (
+        <Recommendations
+          documentId={document.id}
+          onSelectDocument={onSelectDocument}
+        />
+      )}
+    </article>
   );
 }

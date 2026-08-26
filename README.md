@@ -22,24 +22,24 @@ Upload, analyse, search and compare scientific papers using AI.
 
 ## What is this?
 
-ResearchIQ lets you upload research papers (PDFs) and get structured analysis back in seconds. It extracts the key parts like objectives, methodology, findings, strengths and limitations so you don't have to read through 20+ pages yourself.
+ResearchIQ is a full-stack platform for uploading research papers (PDFs) and getting structured analysis back in seconds. It extracts objectives, methodology, findings, strengths and limitations automatically.
 
-You can search across your whole collection, compare papers side by side, and optionally connect an LLM for deeper AI analysis.
+The platform supports searching across an entire paper collection, side-by-side comparison, and optional LLM integration for deeper AI analysis.
 
 ## The problem
 
-Literature reviews are painful. Going through 30+ papers just to pull out the same info from each one takes hours. ChatGPT works for one paper at a time but doesn't remember anything between sessions and can't search across a collection.
+Literature reviews are time-consuming. Extracting the same information from 30+ papers takes hours of repetitive work. Existing AI tools like ChatGPT only work on one paper at a time, don't persist between sessions, and can't search across a collection.
 
-ResearchIQ solves this. Upload all your papers, get structured analysis instantly, and search across everything at once. Each finding is grounded in the actual paper content instead of generic AI responses.
+ResearchIQ addresses this by providing a dedicated workspace for managing and analyzing papers. Every finding is grounded in the actual paper content, not generic AI responses.
 
-## Why use it?
+## Key benefits
 
-* Saves a ton of time when reviewing papers
-* Works without an API key (heuristic analysis is built in)
-* Search across all your papers at once
-* Compare papers on methodology, findings and conclusions
+* Significant time savings when reviewing multiple papers
+* Works without an API key (built-in heuristic analysis)
+* Full-text search across the entire paper collection
+* Side-by-side comparison on methodology, findings and conclusions
 * Export analysis as PDF or DOCX
-* Your papers stay on your infrastructure
+* Papers remain on the user's infrastructure
 
 ---
 
@@ -50,14 +50,14 @@ ResearchIQ solves this. Upload all your papers, get structured analysis instantl
 * Upload single or multiple PDF research papers
 * Automatic metadata extraction (title, authors, abstract)
 * AI or heuristic paper analysis (summary, methodology, findings, strengths, limitations, keywords)
-* Full text search with page aware results
-* Side by side paper comparison
+* Full text search with page-aware results
+* Side-by-side paper comparison
 * Citation export (BibTeX, APA, MLA)
 * Paper recommendations based on similarity
-* In app PDF viewer with navigation and zoom
+* In-app PDF viewer with navigation and zoom
 * User authentication with JWT
 
-### What got added later
+### Extended features
 
 * Chat with papers (conversational Q&A using RAG)
 * Search external papers from Semantic Scholar and arXiv
@@ -66,8 +66,8 @@ ResearchIQ solves this. Upload all your papers, get structured analysis instantl
 * Export analysis as PDF or DOCX
 * Batch analyse multiple papers at once
 * Quick, standard or deep analysis levels
-* Multi model LLM support (OpenAI, Groq, Anthropic, Google, Ollama)
-* FAISS based vector search with OpenAI embeddings
+* Multi-model LLM support (OpenAI, Groq, Anthropic, Google, Ollama)
+* FAISS-based vector search with OpenAI embeddings
 * Map analysis results back to specific PDF pages
 * Collections for organizing papers by topic
 * Shareable research sessions with expiring links
@@ -129,7 +129,7 @@ ResearchIQ solves this. Upload all your papers, get structured analysis instantl
 
 ## Getting started
 
-### What you need
+### Prerequisites
 
 * Python 3.11 or newer
 * Node.js 18 or newer
@@ -187,9 +187,9 @@ VITE_API_URL=http://localhost:8000
 
 ## LLM setup
 
-ResearchIQ works without an LLM. If no API key is set, it uses a built in heuristic engine that pattern matches common phrases in academic papers.
+ResearchIQ works without an LLM. When no API key is configured, a built-in heuristic engine pattern-matches common phrases in academic papers.
 
-To enable AI analysis, set the LLM environment variables. Any OpenAI compatible API works.
+To enable AI analysis, set the LLM environment variables. Any OpenAI-compatible API works.
 
 ### Supported providers
 
@@ -246,11 +246,11 @@ To enable AI analysis, set the LLM environment variables. Any OpenAI compatible 
 
 ## Known issues
 
-* Groq free tier has strict rate limits — might hit 429 errors if too many analyses run too fast
-* PDF viewer doesn't work for papers uploaded before the database persistence update — need to re-upload
-* The heuristic analysis is pretty basic — just pattern matches common phrases
-* Some PDFs with weird formatting don't extract text properly
-* The visualizations could be more interactive (currently just static displays)
+* Groq free tier has strict rate limits — 429 errors may occur with rapid consecutive analyses
+* PDF viewer does not work for papers uploaded before the database persistence update (re-upload required)
+* Heuristic analysis is limited to pattern matching common academic phrases
+* Some PDFs with non-standard formatting do not extract text correctly
+* Visualizations are currently static displays
 
 ---
 
@@ -266,10 +266,10 @@ pytest -v
 ## What's next
 
 * OCR support for scanned PDFs
-* Real time collaboration
+* Real-time collaboration
 * Interactive citation graph
 * Custom analysis templates
-* Multi language support
+* Multi-language support
 * Browser extension for importing papers
 * Mobile design improvements
 
